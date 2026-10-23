@@ -10,6 +10,8 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <!-- QRCode.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <!-- Nimiq Hub Client SDK for Web & Mainnet Wallet Connect / Checkout -->
+  <script src="https://unpkg.com/@nimiq/hub-api@v1.5.0/dist/HubApi.standalone.umd.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
     body {
@@ -38,7 +40,7 @@
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 rounded-xl nimiq-gradient flex items-center justify-center shadow-lg shadow-yellow-500/20">
           <svg class="w-6 h-6 text-gray-900 font-bold" viewBox="0 0 24 24" fill="currentColor">
-            <polygon points="12,2 22,8.5 22,15.5 12,22 2,15.5 2,8.5"/>
+            <polygon points="12,2 22,8.5 22,15.5 12,22 2,15.5 12,22 2,15.5 2,8.5"/>
           </svg>
         </div>
         <div>
@@ -46,10 +48,30 @@
           <p class="text-xs text-gray-400">Mainnet Fast Crypto Settlement</p>
         </div>
       </div>
-      <button id="about-btn" class="p-2 rounded-lg glass-card hover:bg-gray-800 text-gray-300 transition-colors" title="About & Instructions">
-        <i data-lucide="help-circle" class="w-5 h-5"></i>
-      </button>
+      <div class="flex items-center gap-2">
+        <button id="connect-wallet-btn" class="text-xs px-3 py-1.5 rounded-lg border border-yellow-400/30 bg-yellow-400/10 text-yellow-300 hover:bg-yellow-400/20 font-semibold flex items-center gap-1.5 transition">
+          <i data-lucide="wallet" class="w-3.5 h-3.5"></i>
+          <span id="connect-wallet-text">Connect Wallet</span>
+        </button>
+        <button id="about-btn" class="p-2 rounded-lg glass-card hover:bg-gray-800 text-gray-300 transition-colors" title="About & Instructions">
+          <i data-lucide="help-circle" class="w-5 h-5"></i>
+        </button>
+      </div>
     </header>
+
+    <!-- Connected Wallet Banner (Hidden by default) -->
+    <div id="wallet-banner" class="glass-card rounded-xl p-3 mb-4 hidden border-yellow-500/30 bg-yellow-500/5">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+          <div>
+            <div class="text-[11px] text-gray-400">Connected Nimiq Account</div>
+            <div id="connected-address-display" class="font-mono text-xs font-bold text-white truncate max-w-[200px]">NQ...</div>
+          </div>
+        </div>
+        <button id="disconnect-wallet-btn" class="text-[11px] text-red-400 hover:underline">Disconnect</button>
+      </div>
+    </div>
 
     <!-- Live Ticker Bar -->
     <div class="glass-card rounded-xl p-3 mb-6 flex items-center justify-between text-xs">
@@ -117,9 +139,12 @@
 
       <!-- Receiver Address Input -->
       <div class="mb-6">
-        <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
-          Recipient Nimiq Address
-        </label>
+        <div class="flex justify-between items-center mb-1.5">
+          <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400">
+            Recipient Nimiq Address
+          </label>
+          <button id="use-my-wallet-btn" class="text-[11px] text-yellow-400 hover:underline hidden font-medium">Use my address</button>
+        </div>
         <input 
           type="text" 
           id="recipient-addr" 
@@ -127,7 +152,7 @@
           value="NQ07 0000 0000 0000 0000 0000 0000 0000 0000"
           class="w-full bg-gray-900 border border-gray-700/80 rounded-xl px-3.5 py-2.5 text-sm font-mono focus:outline-none focus:border-yellow-400 transition text-gray-300"
         />
-        <p class="text-[11px] text-gray-500 mt-1">Paste your Nimiq Pay or Safe wallet address here.</p>
+        <p class="text-[11px] text-gray-500 mt-1">Nimiq Pay, Safe or Web Wallet address.</p>
       </div>
 
       <!-- Calculated Share Result -->
@@ -141,16 +166,22 @@
       </div>
 
       <!-- Action Buttons -->
-      <div class="grid grid-cols-2 gap-3">
-        <button id="pay-wallet-btn" class="w-full py-3 px-4 rounded-xl nimiq-gradient text-gray-950 font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-yellow-500/20 hover:brightness-105 active:scale-98 transition">
-          <i data-lucide="wallet" class="w-4 h-4"></i>
-          <span>Pay in App</span>
+      <div class="grid grid-cols-2 gap-3 mb-3">
+        <button id="pay-hub-btn" class="w-full py-3 px-4 rounded-xl nimiq-gradient text-gray-950 font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-yellow-500/20 hover:brightness-105 active:scale-98 transition">
+          <i data-lucide="zap" class="w-4 h-4"></i>
+          <span>Pay via Wallet</span>
         </button>
         <button id="show-qr-btn" class="w-full py-3 px-4 rounded-xl bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white font-bold text-sm flex items-center justify-center gap-2 transition active:scale-98">
           <i data-lucide="qr-code" class="w-4 h-4"></i>
           <span>Show QR</span>
         </button>
       </div>
+
+      <!-- Alternative deep-link option for mobile native Nimiq Pay app -->
+      <button id="pay-wallet-app-btn" class="w-full py-2 px-3 rounded-lg bg-gray-900 border border-gray-800 text-xs text-gray-400 hover:text-white flex items-center justify-center gap-2 transition">
+        <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
+        <span>Open in Nimiq Pay Mobile App (URI)</span>
+      </button>
     </div>
 
     <!-- History Log Section -->
@@ -158,7 +189,7 @@
       <div class="flex items-center justify-between mb-4">
         <div class="flex items-center gap-2">
           <i data-lucide="history" class="w-4 h-4 text-gray-400"></i>
-          <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300">Recent Splits</h2>
+          <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300">Recent Splits & Settlements</h2>
         </div>
         <button id="clear-history-btn" class="text-xs text-gray-500 hover:text-red-400 transition-colors">Clear</button>
       </div>
@@ -203,24 +234,16 @@
         </button>
       </div>
       <div class="space-y-3 text-xs text-gray-300 leading-relaxed max-h-[70vh] overflow-y-auto pr-1">
-        <p><strong>NimiqSplit</strong> is a decentralized, instant bill-splitting mini application running natively on the Nimiq network.</p>
+        <p><strong>NimiqSplit</strong> is a decentralized bill-splitting mini app running natively on the Nimiq network.</p>
         
-        <h4 class="font-semibold text-white uppercase tracking-wider text-[11px] pt-2">Key Features:</h4>
+        <h4 class="font-semibold text-white uppercase tracking-wider text-[11px] pt-2">How Payments Work:</h4>
         <ul class="list-disc pl-4 space-y-1">
-          <li><strong>Real-time CoinGecko Rates:</strong> Fetches live NIM/USDT exchange rates on every split.</li>
-          <li><strong>Dual Currency:</strong> Split directly in NIM or USDT equivalent.</li>
-          <li><strong>Direct Wallet Deep-Links:</strong> Open directly in Nimiq Pay or Safe using standard Nimiq URI schemes.</li>
-          <li><strong>Instant QR Code Generator:</strong> Let friends scan and settle their share on their own devices.</li>
-          <li><strong>Local History:</strong> Keep track of your latest group payments locally.</li>
+          <li><strong>Direct Wallet Connect:</strong> Connect your Nimiq Hub/Safe wallet in one click using the top right button.</li>
+          <li><strong>Instant Checkout:</strong> Click "Pay via Wallet" to sign and broadcast the transaction directly through Nimiq Hub on Mainnet.</li>
+          <li><strong>Mobile App Deep-Link:</strong> Settle instantly in the Nimiq Pay mobile app.</li>
+          <li><strong>QR Code:</strong> Present the QR code to friends so they can scan and pay their exact share from any crypto wallet.</li>
+          <li><strong>Live CoinGecko Rates:</strong> Automatic conversion between NIM and USDT/USD.</li>
         </ul>
-
-        <h4 class="font-semibold text-white uppercase tracking-wider text-[11px] pt-2">How to test on Mainnet:</h4>
-        <ol class="list-decimal pl-4 space-y-1 text-gray-400">
-          <li>Install <strong>Nimiq Pay</strong> on your smartphone.</li>
-          <li>Paste your Nimiq address in the Recipient field.</li>
-          <li>Enter total bill and tap "Pay in App" or "Show QR".</li>
-          <li>Nimiq Pay handles the instant settlement on Mainnet.</li>
-        </ol>
       </div>
       <button id="about-gotit-btn" class="mt-5 w-full py-2.5 rounded-xl nimiq-gradient text-gray-950 font-bold text-sm">
         Got it!
@@ -229,11 +252,22 @@
   </div>
 
   <script>
-    // App State
-    let selectedCurrency = 'NIM'; // 'NIM' | 'USDT'
-    let nimUsdPrice = 0.0014; // fallback price
+    // State
+    let selectedCurrency = 'NIM';
+    let nimUsdPrice = 0.0014;
     let splitCount = 2;
     let history = JSON.parse(localStorage.getItem('nimiqsplit_history') || '[]');
+    let connectedAddress = localStorage.getItem('nimiqsplit_connected_addr') || null;
+
+    // Initialize Nimiq Hub API (Official client)
+    let hubApi = null;
+    try {
+      if (window.HubApi) {
+        hubApi = new HubApi('https://hub.nimiq.com');
+      }
+    } catch (e) {
+      console.warn('HubApi initialization error:', e);
+    }
 
     // Elements
     const billInput = document.getElementById('bill-amount');
@@ -244,13 +278,15 @@
     const decreaseBtn = document.getElementById('decrease-btn');
     const increaseBtn = document.getElementById('increase-btn');
     const recipientInput = document.getElementById('recipient-addr');
+    const useMyWalletBtn = document.getElementById('use-my-wallet-btn');
     const perPersonEl = document.getElementById('per-person-amount');
     const perPersonCurrEl = document.getElementById('per-person-curr');
     const perPersonEquivEl = document.getElementById('per-person-equiv');
     const equivLabel = document.getElementById('equiv-label');
     const rateDisplay = document.getElementById('rate-display');
     const refreshRateBtn = document.getElementById('refresh-rate-btn');
-    const payWalletBtn = document.getElementById('pay-wallet-btn');
+    const payHubBtn = document.getElementById('pay-hub-btn');
+    const payWalletAppBtn = document.getElementById('pay-wallet-app-btn');
     const showQrBtn = document.getElementById('show-qr-btn');
     const qrModal = document.getElementById('qr-modal');
     const closeQrBtn = document.getElementById('close-qr-btn');
@@ -264,8 +300,77 @@
     const aboutGotItBtn = document.getElementById('about-gotit-btn');
     const historyList = document.getElementById('history-list');
     const clearHistoryBtn = document.getElementById('clear-history-btn');
+    const connectWalletBtn = document.getElementById('connect-wallet-btn');
+    const connectWalletText = document.getElementById('connect-wallet-text');
+    const walletBanner = document.getElementById('wallet-banner');
+    const connectedAddressDisplay = document.getElementById('connected-address-display');
+    const disconnectWalletBtn = document.getElementById('disconnect-wallet-btn');
 
     let qrCodeInstance = null;
+
+    // Update Wallet UI
+    function updateWalletUi() {
+      if (connectedAddress) {
+        connectWalletText.innerText = connectedAddress.slice(0, 6) + '...' + connectedAddress.slice(-4);
+        connectedAddressDisplay.innerText = connectedAddress;
+        walletBanner.classList.remove('hidden');
+        useMyWalletBtn.classList.remove('hidden');
+      } else {
+        connectWalletText.innerText = 'Connect Wallet';
+        walletBanner.classList.add('hidden');
+        useMyWalletBtn.classList.add('hidden');
+      }
+    }
+
+    // Connect Wallet (via Nimiq Hub Choose Address / Login)
+    connectWalletBtn.addEventListener('click', async () => {
+      if (connectedAddress) {
+        alert('Connected wallet: ' + connectedAddress);
+        return;
+      }
+      if (hubApi) {
+        try {
+          // HubApi chooseAddress allows user to log in or select their wallet address
+          const result = await hubApi.chooseAddress({
+            appName: 'NimiqSplit'
+          });
+          if (result && result.address) {
+            connectedAddress = result.address;
+            localStorage.setItem('nimiqsplit_connected_addr', connectedAddress);
+            recipientInput.value = connectedAddress;
+            updateWalletUi();
+          }
+        } catch (err) {
+          console.warn('Hub connection canceled or failed:', err);
+          // Fallback prompt for manual entry if Hub popup was closed/blocked
+          fallbackManualConnect();
+        }
+      } else {
+        fallbackManualConnect();
+      }
+    });
+
+    function fallbackManualConnect() {
+      const addr = prompt('Enter your Nimiq address (NQ...):', connectedAddress || '');
+      if (addr && addr.trim()) {
+        connectedAddress = addr.trim();
+        localStorage.setItem('nimiqsplit_connected_addr', connectedAddress);
+        recipientInput.value = connectedAddress;
+        updateWalletUi();
+      }
+    }
+
+    disconnectWalletBtn.addEventListener('click', () => {
+      connectedAddress = null;
+      localStorage.removeItem('nimiqsplit_connected_addr');
+      updateWalletUi();
+    });
+
+    useMyWalletBtn.addEventListener('click', () => {
+      if (connectedAddress) {
+        recipientInput.value = connectedAddress;
+      }
+    });
 
     // Fetch Live Rates
     async function fetchLiveRates() {
@@ -306,24 +411,30 @@
       }
     }
 
-    function getPayUri() {
+    function getShareInLuna() {
       const share = (parseFloat(billInput.value) || 0) / splitCount;
-      const addr = recipientInput.value.trim().replace(/\s+/g, '');
-      
-      // Calculate amount in NIM Luna (1 NIM = 100,000 Luna)
-      let nimAmount = selectedCurrency === 'NIM' ? share : (share / nimUsdPrice);
-      const luna = Math.round(nimAmount * 100000);
-      
+      const nimAmount = selectedCurrency === 'NIM' ? share : (share / nimUsdPrice);
+      return Math.round(nimAmount * 100000);
+    }
+
+    function getCleanRecipient() {
+      return recipientInput.value.trim().replace(/\s+/g, '');
+    }
+
+    function getPayUri() {
+      const luna = getShareInLuna();
+      const addr = getCleanRecipient();
       return `nimiq:${addr}?amount=${luna}&message=NimiqSplit%20Share`;
     }
 
-    function saveToHistory(shareAmount, currency) {
+    function saveToHistory(shareAmount, currency, status = 'Pending') {
       const entry = {
         id: Date.now(),
         date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         amount: shareAmount.toFixed(2),
         currency: currency,
-        people: splitCount
+        people: splitCount,
+        status: status
       };
       history.unshift(entry);
       if (history.length > 5) history.pop();
@@ -342,7 +453,9 @@
             <div class="font-bold text-white">${item.amount} ${item.currency} <span class="text-gray-400 font-normal">/ person</span></div>
             <div class="text-[10px] text-gray-500">Split among ${item.people} • ${item.date}</div>
           </div>
-          <span class="text-xs font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Saved</span>
+          <span class="text-xs font-mono px-2 py-0.5 rounded ${item.status === 'Paid' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'}">
+            ${item.status}
+          </span>
         </div>
       `).join('');
     }
@@ -380,19 +493,54 @@
     });
 
     billInput.addEventListener('input', calculate);
-
     refreshRateBtn.addEventListener('click', fetchLiveRates);
 
-    // Pay Wallet Button
-    payWalletBtn.addEventListener('click', () => {
+    // Pay via Nimiq Hub Wallet (Official Web Checkout/Signer)
+    payHubBtn.addEventListener('click', async () => {
       const share = (parseFloat(billInput.value) || 0) / splitCount;
       if (share <= 0) {
         alert("Please enter a valid bill amount first!");
         return;
       }
-      saveToHistory(share, selectedCurrency);
-      const uri = getPayUri();
-      window.location.href = uri;
+
+      const recipient = getCleanRecipient();
+      const valueLuna = getShareInLuna();
+
+      if (hubApi) {
+        try {
+          // Triggers official Nimiq Hub checkout flow
+          const tx = await hubApi.checkout({
+            appName: 'NimiqSplit',
+            recipient: recipient,
+            value: valueLuna,
+            extraData: 'NimiqSplit Payment'
+          });
+          
+          if (tx) {
+            saveToHistory(share, selectedCurrency, 'Paid');
+            alert('Payment successfully sent on Nimiq Mainnet!');
+          }
+        } catch (err) {
+          console.warn('Checkout canceled or failed:', err);
+          // If rejected or canceled, still save pending and give URI fallback
+          saveToHistory(share, selectedCurrency, 'Pending');
+        }
+      } else {
+        // Fallback to URI
+        saveToHistory(share, selectedCurrency, 'Pending');
+        window.location.href = getPayUri();
+      }
+    });
+
+    // Pay via App Deep-link
+    payWalletAppBtn.addEventListener('click', () => {
+      const share = (parseFloat(billInput.value) || 0) / splitCount;
+      if (share <= 0) {
+        alert("Please enter a valid bill amount first!");
+        return;
+      }
+      saveToHistory(share, selectedCurrency, 'Pending');
+      window.location.href = getPayUri();
     });
 
     // Show QR Modal
@@ -402,7 +550,7 @@
         alert("Please enter a valid bill amount first!");
         return;
       }
-      saveToHistory(share, selectedCurrency);
+      saveToHistory(share, selectedCurrency, 'Pending');
       const uri = getPayUri();
       
       qrContainer.innerHTML = '';
@@ -437,6 +585,7 @@
 
     // Init
     lucide.createIcons();
+    updateWalletUi();
     fetchLiveRates();
     renderHistory();
   </script>
