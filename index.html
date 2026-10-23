@@ -10,7 +10,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <!-- QRCode.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <!-- Nimiq Hub Client SDK for Web & Mainnet Wallet Connect / Checkout -->
+  <!-- Official Nimiq Hub SDK -->
   <script src="https://unpkg.com/@nimiq/hub-api@v1.5.0/dist/HubApi.standalone.umd.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
@@ -208,7 +208,7 @@
     </div>
   </div>
 
-  <!-- Connect Wallet Modal (Native modern popup with options) -->
+  <!-- Connect Wallet Modal (Custom Modal with Redirection to Nimiq Safe / Hub) -->
   <div id="wallet-modal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="glass-card max-w-sm w-full rounded-2xl p-6 border border-gray-700 text-left shadow-2xl">
       <div class="flex justify-between items-center mb-4">
@@ -222,40 +222,50 @@
       </div>
       
       <p class="text-xs text-gray-400 mb-4">
-        Choose how you want to connect your Nimiq account:
+        Connect your wallet to receive split payments or authorize transactions:
       </p>
 
       <div class="space-y-3 mb-5">
-        <!-- Option 1: Official Nimiq Hub Login -->
+        <!-- Option 1: Official Nimiq Hub / Safe Connect -->
         <button id="hub-login-btn" class="w-full p-3.5 rounded-xl border border-yellow-500/30 bg-yellow-500/10 hover:bg-yellow-500/20 active:scale-98 transition flex items-center gap-3 text-left">
           <div class="w-9 h-9 rounded-lg nimiq-gradient flex items-center justify-center text-gray-950 shrink-0 font-bold">
             ⚡
           </div>
-          <div class="min-w-0">
-            <div class="text-xs font-bold text-yellow-300">Nimiq Safe & Hub</div>
-            <div class="text-[11px] text-gray-400">Web login via official hub.nimiq.com</div>
+          <div class="min-w-0 flex-1">
+            <div class="text-xs font-bold text-yellow-300">Nimiq Safe / Hub Login</div>
+            <div class="text-[11px] text-gray-400">Open official Nimiq Hub popup</div>
           </div>
+          <i data-lucide="external-link" class="w-4 h-4 text-yellow-400 shrink-0"></i>
         </button>
 
-        <!-- Option 2: Enter / Paste Address -->
-        <div class="p-3.5 rounded-xl bg-gray-900/90 border border-gray-800">
-          <label class="block text-[11px] font-bold text-gray-300 uppercase tracking-wider mb-2">
-            Paste Nimiq Address
-          </label>
-          <div class="space-y-2">
-            <input 
-              type="text" 
-              id="manual-wallet-input" 
-              placeholder="NQ..." 
-              class="w-full bg-gray-950 border border-gray-700 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:border-yellow-400 text-white"
-            />
-            <button id="manual-wallet-save-btn" class="w-full py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-white font-bold text-xs transition">
-              Use this Address
-            </button>
+        <!-- Option 2: Open Safe in new tab if popup is blocked -->
+        <a href="https://wallet.nimiq.com" target="_blank" rel="noopener noreferrer" class="w-full p-3 rounded-xl border border-gray-700 bg-gray-900/60 hover:bg-gray-800 transition flex items-center gap-3 text-left">
+          <div class="w-9 h-9 rounded-lg bg-gray-800 flex items-center justify-center text-gray-300 shrink-0">
+            <i data-lucide="globe" class="w-4 h-4"></i>
           </div>
-          <p class="text-[10px] text-gray-500 mt-2">
-            Tip: Open <strong>Nimiq Pay</strong> on your mobile, copy your receive address, and paste it here.
-          </p>
+          <div class="min-w-0 flex-1">
+            <div class="text-xs font-bold text-white">Open Nimiq Web Wallet</div>
+            <div class="text-[11px] text-gray-400">Copy your NQ address from wallet.nimiq.com</div>
+          </div>
+          <i data-lucide="arrow-up-right" class="w-4 h-4 text-gray-400 shrink-0"></i>
+        </a>
+      </div>
+
+      <!-- Paste Address fallback directly inside the modal -->
+      <div class="border-t border-gray-800 pt-4">
+        <label class="block text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
+          Paste your Nimiq Address
+        </label>
+        <div class="space-y-2">
+          <input 
+            type="text" 
+            id="manual-wallet-input" 
+            placeholder="NQ..." 
+            class="w-full bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-xs font-mono focus:outline-none focus:border-yellow-400 transition text-white"
+          />
+          <button id="manual-wallet-save-btn" class="w-full py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-xs font-bold text-white transition">
+            Save Address
+          </button>
         </div>
       </div>
     </div>
@@ -296,7 +306,7 @@
         
         <h4 class="font-semibold text-white uppercase tracking-wider text-[11px] pt-2">How Payments Work:</h4>
         <ul class="list-disc pl-4 space-y-1">
-          <li><strong>Direct Wallet Connect:</strong> Connect your Nimiq Hub/Safe wallet in one click using the "Connect Wallet" button at the top.</li>
+          <li><strong>Direct Wallet Connect:</strong> Connect your Nimiq Hub/Safe wallet in one click using the top right button.</li>
           <li><strong>Instant Checkout:</strong> Click "Pay via Wallet" to sign and broadcast the transaction directly through Nimiq Hub on Mainnet.</li>
           <li><strong>Mobile App Deep-Link:</strong> Settle instantly in the Nimiq Pay mobile app via URI scheme.</li>
           <li><strong>QR Code:</strong> Present the QR code to friends so they can scan and pay their exact share from any crypto wallet.</li>
@@ -324,16 +334,6 @@
     let splitCount = 2;
     let history = JSON.parse(localStorage.getItem('nimiqsplit_history') || '[]');
     let connectedAddress = localStorage.getItem('nimiqsplit_connected_addr') || null;
-
-    // Initialize Nimiq Hub API
-    let hubApi = null;
-    try {
-      if (window.HubApi) {
-        hubApi = new HubApi('https://hub.nimiq.com');
-      }
-    } catch (e) {
-      console.warn('HubApi initialization error:', e);
-    }
 
     // Elements
     const billInput = document.getElementById('bill-amount');
@@ -381,6 +381,18 @@
 
     let qrCodeInstance = null;
 
+    // Helper to get or init HubApi safely on demand
+    function getHub() {
+      try {
+        if (window.HubApi) {
+          return new HubApi('https://hub.nimiq.com');
+        }
+      } catch (e) {
+        console.warn('HubApi initialization error:', e);
+      }
+      return null;
+    }
+
     // Update Wallet UI
     function updateWalletUi() {
       if (connectedAddress) {
@@ -403,11 +415,12 @@
       walletModal.classList.add('hidden');
     }
 
-    // Open Custom Wallet Modal
+    // Open Wallet Modal on click (never use native alert/prompt!)
     connectWalletBtn.addEventListener('click', () => {
       if (connectedAddress) {
-        recipientInput.value = connectedAddress;
-        alert('Active wallet: ' + connectedAddress);
+        // If already connected, show banner or allow switching
+        walletModal.classList.remove('hidden');
+        manualWalletInput.value = connectedAddress;
         return;
       }
       manualWalletInput.value = '';
@@ -420,9 +433,10 @@
 
     // Option 1: Official Hub Login
     hubLoginBtn.addEventListener('click', async () => {
-      if (hubApi) {
+      const hub = getHub();
+      if (hub) {
         try {
-          const result = await hubApi.chooseAddress({
+          const result = await hub.chooseAddress({
             appName: 'NimiqSplit'
           });
           if (result && result.address) {
@@ -431,18 +445,19 @@
           }
         } catch (err) {
           console.warn('Hub connection error / popup blocked:', err);
+          // If popup blocked in mobile in-app browser, direct user to paste address
+          manualWalletInput.focus();
         }
+      } else {
+        manualWalletInput.focus();
       }
-      // If Hub popup blocked or error on mobile, focus input
-      manualWalletInput.focus();
-      alert('Hub popup was not completed. You can paste your Nimiq address directly below.');
     });
 
     // Option 2: Paste Address Save
     manualWalletSaveBtn.addEventListener('click', () => {
       const val = manualWalletInput.value.trim();
       if (!val) {
-        alert('Please enter or paste your Nimiq address.');
+        manualWalletInput.focus();
         return;
       }
       setConnectedWallet(val);
@@ -593,10 +608,11 @@
 
       const recipient = getCleanRecipient();
       const valueLuna = getShareInLuna();
+      const hub = getHub();
 
-      if (hubApi) {
+      if (hub) {
         try {
-          const tx = await hubApi.checkout({
+          const tx = await hub.checkout({
             appName: 'NimiqSplit',
             recipient: recipient,
             value: valueLuna,
