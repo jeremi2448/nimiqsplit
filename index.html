@@ -33,69 +33,66 @@
   </style>
 </head>
 <body class="min-h-screen pb-12">
-  <div class="max-w-md mx-auto px-4 pt-6">
+  <div class="max-w-md mx-auto px-4 pt-5">
     
     <!-- Top Navigation Bar -->
-    <header class="flex items-center justify-between pb-4 border-b border-gray-800 mb-6">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl nimiq-gradient flex items-center justify-center shadow-lg shadow-yellow-500/20">
-          <svg class="w-6 h-6 text-gray-900 font-bold" viewBox="0 0 24 24" fill="currentColor">
-            <polygon points="12,2 22,8.5 22,15.5 12,22 2,15.5 12,22 2,15.5 2,8.5"/>
+    <header class="flex items-center justify-between pb-3 border-b border-gray-800 mb-4 gap-2">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <div class="w-9 h-9 shrink-0 rounded-xl nimiq-gradient flex items-center justify-center shadow-lg shadow-yellow-500/20">
+          <svg class="w-5 h-5 text-gray-900 font-bold" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="12,2 22,8.5 22,15.5 12,22 2,15.5 2,8.5"/>
           </svg>
         </div>
-        <div>
-          <h1 class="text-xl font-extrabold tracking-tight">NimiqSplit</h1>
-          <p class="text-xs text-gray-400">Mainnet Fast Crypto Settlement</p>
+        <div class="min-w-0">
+          <h1 class="text-lg font-extrabold tracking-tight truncate">NimiqSplit</h1>
+          <p class="text-[11px] text-gray-400 truncate">Mainnet Fast Settlement</p>
         </div>
       </div>
-      <div class="flex items-center gap-2">
-        <button id="connect-wallet-btn" class="text-xs px-3 py-1.5 rounded-lg border border-yellow-400/30 bg-yellow-400/10 text-yellow-300 hover:bg-yellow-400/20 font-semibold flex items-center gap-1.5 transition">
-          <i data-lucide="wallet" class="w-3.5 h-3.5"></i>
-          <span id="connect-wallet-text">Connect Wallet</span>
-        </button>
-        <button id="about-btn" class="p-2 rounded-lg glass-card hover:bg-gray-800 text-gray-300 transition-colors" title="About & Instructions">
-          <i data-lucide="help-circle" class="w-5 h-5"></i>
-        </button>
-      </div>
+      
+      <!-- Connect Wallet Button in Header -->
+      <button id="connect-wallet-btn" class="shrink-0 px-3 py-2 rounded-xl border border-yellow-400/40 bg-yellow-400/15 text-yellow-300 hover:bg-yellow-400/25 active:scale-95 text-xs font-bold flex items-center gap-1.5 transition shadow-sm">
+        <i data-lucide="wallet" class="w-4 h-4"></i>
+        <span id="connect-wallet-text">Connect Wallet</span>
+      </button>
     </header>
 
     <!-- Connected Wallet Banner (Hidden by default) -->
     <div id="wallet-banner" class="glass-card rounded-xl p-3 mb-4 hidden border-yellow-500/30 bg-yellow-500/5">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
-          <div>
-            <div class="text-[11px] text-gray-400">Connected Nimiq Account</div>
-            <div id="connected-address-display" class="font-mono text-xs font-bold text-white truncate max-w-[200px]">NQ...</div>
+      <div class="flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2 min-w-0">
+          <span class="w-2.5 h-2.5 shrink-0 rounded-full bg-emerald-400"></span>
+          <div class="min-w-0">
+            <div class="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">Connected Wallet</div>
+            <div id="connected-address-display" class="font-mono text-xs font-bold text-white truncate">NQ...</div>
           </div>
         </div>
-        <button id="disconnect-wallet-btn" class="text-[11px] text-red-400 hover:underline">Disconnect</button>
+        <button id="disconnect-wallet-btn" class="text-xs text-red-400 hover:text-red-300 font-medium shrink-0 px-2 py-1 rounded bg-red-500/10 border border-red-500/20">Disconnect</button>
       </div>
     </div>
 
     <!-- Live Ticker Bar -->
-    <div class="glass-card rounded-xl p-3 mb-6 flex items-center justify-between text-xs">
+    <div class="glass-card rounded-xl p-3 mb-5 flex items-center justify-between text-xs">
       <div class="flex items-center gap-2">
         <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-        <span class="text-gray-400 font-medium">Live CoinGecko Rate:</span>
+        <span class="text-gray-400 font-medium">CoinGecko:</span>
       </div>
       <div class="flex items-center gap-2 font-mono font-semibold">
         <span id="rate-display" class="text-yellow-400">1 NIM = loading...</span>
-        <button id="refresh-rate-btn" class="text-gray-400 hover:text-white transition-colors" title="Refresh Price">
+        <button id="refresh-rate-btn" class="text-gray-400 hover:text-white transition-colors p-1" title="Refresh Price">
           <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
         </button>
       </div>
     </div>
 
     <!-- Main Card -->
-    <div class="glass-card rounded-2xl p-6 shadow-2xl mb-6">
+    <div class="glass-card rounded-2xl p-5 sm:p-6 shadow-2xl mb-5">
       
       <!-- Currency Switcher -->
-      <div class="grid grid-cols-2 gap-2 bg-gray-900/90 p-1.5 rounded-xl mb-6 border border-gray-800">
-        <button id="curr-nim" class="py-2.5 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all nimiq-gradient text-gray-950 shadow">
+      <div class="grid grid-cols-2 gap-2 bg-gray-900/90 p-1.5 rounded-xl mb-5 border border-gray-800">
+        <button id="curr-nim" class="py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all nimiq-gradient text-gray-950 shadow">
           <span>⚡ NIM</span>
         </button>
-        <button id="curr-usdt" class="py-2.5 rounded-lg text-sm font-bold flex items-center justify-center gap-2 text-gray-400 hover:text-white transition-all">
+        <button id="curr-usdt" class="py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 text-gray-400 hover:text-white transition-all">
           <span>💵 USDT</span>
         </button>
       </div>
@@ -113,50 +110,50 @@
             step="any"
             min="0"
             placeholder="0.00" 
-            class="w-full bg-gray-900 border border-gray-700/80 rounded-xl px-4 py-3.5 text-2xl font-bold font-mono focus:outline-none focus:border-yellow-400 transition"
+            class="w-full bg-gray-900 border border-gray-700/80 rounded-xl px-4 py-3 text-2xl font-bold font-mono focus:outline-none focus:border-yellow-400 transition"
           />
-          <span id="currency-badge" class="absolute right-4 top-3.5 px-2.5 py-1 text-xs font-bold rounded-md bg-yellow-400/20 text-yellow-400 border border-yellow-400/30">
+          <span id="currency-badge" class="absolute right-3.5 top-3 px-2 py-1 text-xs font-bold rounded-md bg-yellow-400/20 text-yellow-400 border border-yellow-400/30">
             NIM
           </span>
         </div>
       </div>
 
       <!-- Split Number Counter -->
-      <div class="mb-6">
+      <div class="mb-5">
         <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">Split With</label>
         <div class="flex items-center gap-3">
-          <button id="decrease-btn" class="w-12 h-12 rounded-xl bg-gray-900 border border-gray-700 hover:border-gray-500 font-bold text-xl flex items-center justify-center transition active:scale-95">
+          <button id="decrease-btn" class="w-12 h-11 rounded-xl bg-gray-900 border border-gray-700 hover:border-gray-500 font-bold text-xl flex items-center justify-center transition active:scale-95">
             -
           </button>
-          <div class="flex-1 text-center font-mono text-xl font-bold bg-gray-900/60 border border-gray-800 py-2.5 rounded-xl">
+          <div class="flex-1 text-center font-mono text-lg font-bold bg-gray-900/60 border border-gray-800 py-2 rounded-xl">
             <span id="split-count">2</span> <span class="text-sm font-normal text-gray-400">people</span>
           </div>
-          <button id="increase-btn" class="w-12 h-12 rounded-xl bg-gray-900 border border-gray-700 hover:border-gray-500 font-bold text-xl flex items-center justify-center transition active:scale-95">
+          <button id="increase-btn" class="w-12 h-11 rounded-xl bg-gray-900 border border-gray-700 hover:border-gray-500 font-bold text-xl flex items-center justify-center transition active:scale-95">
             +
           </button>
         </div>
       </div>
 
       <!-- Receiver Address Input -->
-      <div class="mb-6">
+      <div class="mb-5">
         <div class="flex justify-between items-center mb-1.5">
           <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400">
             Recipient Nimiq Address
           </label>
-          <button id="use-my-wallet-btn" class="text-[11px] text-yellow-400 hover:underline hidden font-medium">Use my address</button>
+          <button id="use-my-wallet-btn" class="text-[11px] text-yellow-400 hover:underline hidden font-medium">Use connected address</button>
         </div>
         <input 
           type="text" 
           id="recipient-addr" 
           placeholder="NQ..." 
           value="NQ07 0000 0000 0000 0000 0000 0000 0000 0000"
-          class="w-full bg-gray-900 border border-gray-700/80 rounded-xl px-3.5 py-2.5 text-sm font-mono focus:outline-none focus:border-yellow-400 transition text-gray-300"
+          class="w-full bg-gray-900 border border-gray-700/80 rounded-xl px-3.5 py-2.5 text-xs font-mono focus:outline-none focus:border-yellow-400 transition text-gray-300"
         />
         <p class="text-[11px] text-gray-500 mt-1">Nimiq Pay, Safe or Web Wallet address.</p>
       </div>
 
       <!-- Calculated Share Result -->
-      <div class="bg-gradient-to-br from-yellow-500/10 to-amber-500/5 border border-yellow-500/20 rounded-2xl p-4 mb-6">
+      <div class="bg-gradient-to-br from-yellow-500/10 to-amber-500/5 border border-yellow-500/20 rounded-2xl p-4 mb-5">
         <div class="text-xs uppercase tracking-wider font-semibold text-yellow-300 mb-1">Each Person Pays</div>
         <div class="flex items-baseline gap-2">
           <span id="per-person-amount" class="text-3xl font-extrabold font-mono text-white">0.00</span>
@@ -167,29 +164,29 @@
 
       <!-- Action Buttons -->
       <div class="grid grid-cols-2 gap-3 mb-3">
-        <button id="pay-hub-btn" class="w-full py-3 px-4 rounded-xl nimiq-gradient text-gray-950 font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-yellow-500/20 hover:brightness-105 active:scale-98 transition">
+        <button id="pay-hub-btn" class="w-full py-3 px-3 rounded-xl nimiq-gradient text-gray-950 font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-yellow-500/20 hover:brightness-105 active:scale-98 transition">
           <i data-lucide="zap" class="w-4 h-4"></i>
           <span>Pay via Wallet</span>
         </button>
-        <button id="show-qr-btn" class="w-full py-3 px-4 rounded-xl bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white font-bold text-sm flex items-center justify-center gap-2 transition active:scale-98">
+        <button id="show-qr-btn" class="w-full py-3 px-3 rounded-xl bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white font-bold text-sm flex items-center justify-center gap-2 transition active:scale-98">
           <i data-lucide="qr-code" class="w-4 h-4"></i>
           <span>Show QR</span>
         </button>
       </div>
 
       <!-- Alternative deep-link option for mobile native Nimiq Pay app -->
-      <button id="pay-wallet-app-btn" class="w-full py-2 px-3 rounded-lg bg-gray-900 border border-gray-800 text-xs text-gray-400 hover:text-white flex items-center justify-center gap-2 transition">
+      <button id="pay-wallet-app-btn" class="w-full py-2.5 px-3 rounded-xl bg-gray-900 border border-gray-800 hover:border-gray-700 text-xs text-gray-400 hover:text-white flex items-center justify-center gap-2 transition">
         <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
         <span>Open in Nimiq Pay Mobile App (URI)</span>
       </button>
     </div>
 
     <!-- History Log Section -->
-    <div class="glass-card rounded-2xl p-5 mb-6">
+    <div class="glass-card rounded-2xl p-5 mb-5">
       <div class="flex items-center justify-between mb-4">
         <div class="flex items-center gap-2">
           <i data-lucide="history" class="w-4 h-4 text-gray-400"></i>
-          <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300">Recent Splits & Settlements</h2>
+          <h2 class="text-xs font-bold uppercase tracking-wider text-gray-300">Recent Splits & Settlements</h2>
         </div>
         <button id="clear-history-btn" class="text-xs text-gray-500 hover:text-red-400 transition-colors">Clear</button>
       </div>
@@ -198,9 +195,17 @@
       </div>
     </div>
 
-    <footer class="text-center text-xs text-gray-600">
-      Built for the Nimiq Mini Apps Competition 2026 • Mainnet Ready
-    </footer>
+    <!-- Bottom Actions / Footer -->
+    <div class="flex flex-col items-center gap-3 pt-2">
+      <button id="about-btn" class="w-full py-2.5 px-4 rounded-xl glass-card hover:bg-gray-800 border border-gray-800 text-gray-300 font-semibold text-xs flex items-center justify-center gap-2 transition">
+        <i data-lucide="info" class="w-4 h-4 text-yellow-400"></i>
+        <span>About NimiqSplit & How to Use</span>
+      </button>
+      
+      <footer class="text-center text-[11px] text-gray-600">
+        Built for the Nimiq Mini Apps Competition 2026 • Mainnet Ready
+      </footer>
+    </div>
   </div>
 
   <!-- QR Code Modal -->
@@ -238,12 +243,20 @@
         
         <h4 class="font-semibold text-white uppercase tracking-wider text-[11px] pt-2">How Payments Work:</h4>
         <ul class="list-disc pl-4 space-y-1">
-          <li><strong>Direct Wallet Connect:</strong> Connect your Nimiq Hub/Safe wallet in one click using the top right button.</li>
+          <li><strong>Direct Wallet Connect:</strong> Connect your Nimiq Hub/Safe wallet in one click using the "Connect Wallet" button at the top.</li>
           <li><strong>Instant Checkout:</strong> Click "Pay via Wallet" to sign and broadcast the transaction directly through Nimiq Hub on Mainnet.</li>
-          <li><strong>Mobile App Deep-Link:</strong> Settle instantly in the Nimiq Pay mobile app.</li>
+          <li><strong>Mobile App Deep-Link:</strong> Settle instantly in the Nimiq Pay mobile app via URI scheme.</li>
           <li><strong>QR Code:</strong> Present the QR code to friends so they can scan and pay their exact share from any crypto wallet.</li>
           <li><strong>Live CoinGecko Rates:</strong> Automatic conversion between NIM and USDT/USD.</li>
         </ul>
+
+        <h4 class="font-semibold text-white uppercase tracking-wider text-[11px] pt-2">Step-by-step:</h4>
+        <ol class="list-decimal pl-4 space-y-1 text-gray-400">
+          <li>Tap <strong>Connect Wallet</strong> to auto-fill your recipient address (or type any Nimiq address).</li>
+          <li>Enter total bill and choose currency (NIM or USDT).</li>
+          <li>Select how many people to split with.</li>
+          <li>Tap <strong>Pay via Wallet</strong> to trigger the transaction, or <strong>Show QR</strong> for your friends to scan!</li>
+        </ol>
       </div>
       <button id="about-gotit-btn" class="mt-5 w-full py-2.5 rounded-xl nimiq-gradient text-gray-950 font-bold text-sm">
         Got it!
@@ -311,7 +324,7 @@
     // Update Wallet UI
     function updateWalletUi() {
       if (connectedAddress) {
-        connectWalletText.innerText = connectedAddress.slice(0, 6) + '...' + connectedAddress.slice(-4);
+        connectWalletText.innerText = connectedAddress.slice(0, 4) + '...' + connectedAddress.slice(-4);
         connectedAddressDisplay.innerText = connectedAddress;
         walletBanner.classList.remove('hidden');
         useMyWalletBtn.classList.remove('hidden');
@@ -322,43 +335,47 @@
       }
     }
 
-    // Connect Wallet (via Nimiq Hub Choose Address / Login)
+    // Connect Wallet Handler via Nimiq Hub API
     connectWalletBtn.addEventListener('click', async () => {
       if (connectedAddress) {
-        alert('Connected wallet: ' + connectedAddress);
+        // already connected, fill recipient
+        recipientInput.value = connectedAddress;
+        alert('Your wallet is connected: ' + connectedAddress);
         return;
       }
-      if (hubApi) {
-        try {
-          // HubApi chooseAddress allows user to log in or select their wallet address
-          const result = await hubApi.chooseAddress({
-            appName: 'NimiqSplit'
-          });
-          if (result && result.address) {
-            connectedAddress = result.address;
-            localStorage.setItem('nimiqsplit_connected_addr', connectedAddress);
-            recipientInput.value = connectedAddress;
-            updateWalletUi();
-          }
-        } catch (err) {
-          console.warn('Hub connection canceled or failed:', err);
-          // Fallback prompt for manual entry if Hub popup was closed/blocked
-          fallbackManualConnect();
-        }
-      } else {
-        fallbackManualConnect();
-      }
-    });
 
-    function fallbackManualConnect() {
-      const addr = prompt('Enter your Nimiq address (NQ...):', connectedAddress || '');
-      if (addr && addr.trim()) {
-        connectedAddress = addr.trim();
-        localStorage.setItem('nimiqsplit_connected_addr', connectedAddress);
-        recipientInput.value = connectedAddress;
+      if (!hubApi) {
+        // Fallback prompt for mobile without Hub API
+        const manual = prompt('Enter your Nimiq Wallet Address (starts with NQ):', '');
+        if (manual && manual.trim().startsWith('NQ')) {
+          connectedAddress = manual.trim();
+          localStorage.setItem('nimiqsplit_connected_addr', connectedAddress);
+          recipientInput.value = connectedAddress;
+          updateWalletUi();
+        }
+        return;
+      }
+
+      try {
+        connectWalletText.innerText = 'Connecting...';
+        // Requests accounts list or login from Nimiq Hub
+        const accounts = await hubApi.chooseAddress({
+          appName: 'NimiqSplit'
+        });
+        
+        if (accounts && accounts.address) {
+          connectedAddress = accounts.address;
+          localStorage.setItem('nimiqsplit_connected_addr', connectedAddress);
+          recipientInput.value = connectedAddress;
+          updateWalletUi();
+        } else {
+          updateWalletUi();
+        }
+      } catch (err) {
+        console.warn('Hub connection canceled or failed:', err);
         updateWalletUi();
       }
-    }
+    });
 
     disconnectWalletBtn.addEventListener('click', () => {
       connectedAddress = null;
@@ -413,8 +430,8 @@
 
     function getShareInLuna() {
       const share = (parseFloat(billInput.value) || 0) / splitCount;
-      const nimAmount = selectedCurrency === 'NIM' ? share : (share / nimUsdPrice);
-      return Math.round(nimAmount * 100000);
+      let nimAmount = selectedCurrency === 'NIM' ? share : (share / nimUsdPrice);
+      return Math.round(nimAmount * 100000); // 1 NIM = 100,000 Luna
     }
 
     function getCleanRecipient() {
@@ -422,8 +439,8 @@
     }
 
     function getPayUri() {
-      const luna = getShareInLuna();
       const addr = getCleanRecipient();
+      const luna = getShareInLuna();
       return `nimiq:${addr}?amount=${luna}&message=NimiqSplit%20Share`;
     }
 
@@ -463,16 +480,16 @@
     // Switch Currency
     currNimBtn.addEventListener('click', () => {
       selectedCurrency = 'NIM';
-      currNimBtn.className = "py-2.5 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all nimiq-gradient text-gray-950 shadow";
-      currUsdtBtn.className = "py-2.5 rounded-lg text-sm font-bold flex items-center justify-center gap-2 text-gray-400 hover:text-white transition-all";
+      currNimBtn.className = "py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all nimiq-gradient text-gray-950 shadow";
+      currUsdtBtn.className = "py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 text-gray-400 hover:text-white transition-all";
       currencyBadge.innerText = "NIM";
       calculate();
     });
 
     currUsdtBtn.addEventListener('click', () => {
       selectedCurrency = 'USDT';
-      currUsdtBtn.className = "py-2.5 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all bg-emerald-600 text-white shadow";
-      currNimBtn.className = "py-2.5 rounded-lg text-sm font-bold flex items-center justify-center gap-2 text-gray-400 hover:text-white transition-all";
+      currUsdtBtn.className = "py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all bg-emerald-600 text-white shadow";
+      currNimBtn.className = "py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 text-gray-400 hover:text-white transition-all";
       currencyBadge.innerText = "USDT";
       calculate();
     });
@@ -508,7 +525,6 @@
 
       if (hubApi) {
         try {
-          // Triggers official Nimiq Hub checkout flow
           const tx = await hubApi.checkout({
             appName: 'NimiqSplit',
             recipient: recipient,
@@ -522,11 +538,9 @@
           }
         } catch (err) {
           console.warn('Checkout canceled or failed:', err);
-          // If rejected or canceled, still save pending and give URI fallback
           saveToHistory(share, selectedCurrency, 'Pending');
         }
       } else {
-        // Fallback to URI
         saveToHistory(share, selectedCurrency, 'Pending');
         window.location.href = getPayUri();
       }
