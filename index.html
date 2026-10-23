@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>NimiqSplit - Decentralized Bill Splitting</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- QRCode.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: #0d1117;
+      color: #f0f6fc;
+    }
+    .font-mono {
+      font-family: 'Fira Code', monospace;
+    }
+    .nimiq-gradient {
+      background: linear-gradient(135deg, #E9B213 0%, #F6C636 100%);
+    }
+    .glass-card {
+      background: rgba(22, 27, 34, 0.8);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(240, 246, 252, 0.08);
+    }
+  </style>
+</head>
+<body class="min-h-screen pb-12">
+  <div class="max-w-md mx-auto px-4 pt-6">
+    
+    <!-- Top Navigation Bar -->
+    <header class="flex items-center justify-between pb-4 border-b border-gray-800 mb-6">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl nimiq-gradient flex items-center justify-center shadow-lg shadow-yellow-500/20">
+          <svg class="w-6 h-6 text-gray-900 font-bold" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="12,2 22,8.5 22,15.5 12,22 2,15.5 2,8.5"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-xl font-extrabold tracking-tight">NimiqSplit</h1>
+          <p class="text-xs text-gray-400">Mainnet Fast Crypto Settlement</p>
+        </div>
+      </div>
+      <button id="about-btn" class="p-2 rounded-lg glass-card hover:bg-gray-800 text-gray-300 transition-colors" title="About & Instructions">
+        <i data-lucide="help-circle" class="w-5 h-5"></i>
+      </button>
+    </header>
+
+    <!-- Live Ticker Bar -->
+    <div class="glass-card rounded-xl p-3 mb-6 flex items-center justify-between text-xs">
+      <div class="flex items-center gap-2">
+        <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span class="text-gray-400 font-medium">Live CoinGecko Rate:</span>
+      </div>
+      <div class="flex items-center gap-2 font-mono font-semibold">
+        <span id="rate-display" class="text-yellow-400">1 NIM = loading...</span>
+        <button id="refresh-rate-btn" class="text-gray-400 hover:text-white transition-colors" title="Refresh Price">
+          <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Card -->
+    <div class="glass-card rounded-2xl p-6 shadow-2xl mb-6">
+      
+      <!-- Currency Switcher -->
+      <div class="grid grid-cols-2 gap-2 bg-gray-900/90 p-1.5 rounded-xl mb-6 border border-gray-800">
+        <button id="curr-nim" class="py-2.5 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all nimiq-gradient text-gray-950 shadow">
+          <span>⚡ NIM</span>
+        </button>
+        <button id="curr-usdt" class="py-2.5 rounded-lg text-sm font-bold flex items-center justify-center gap-2 text-gray-400 hover:text-white transition-all">
+          <span>💵 USDT</span>
+        </button>
+      </div>
+
+      <!-- Amount Input -->
+      <div class="mb-5">
+        <div class="flex justify-between items-center mb-1.5">
+          <label class="text-xs font-semibold uppercase tracking-wider text-gray-400">Total Bill Amount</label>
+          <span id="equiv-label" class="text-xs text-gray-400 font-mono">≈ $0.00 USD</span>
+        </div>
+        <div class="relative">
+          <input 
+            type="number" 
+            id="bill-amount" 
+            step="any"
+            min="0"
+            placeholder="0.00" 
+            class="w-full bg-gray-900 border border-gray-700/80 rounded-xl px-4 py-3.5 text-2xl font-bold font-mono focus:outline-none focus:border-yellow-400 transition"
+          />
+          <span id="currency-badge" class="absolute right-4 top-3.5 px-2.5 py-1 text-xs font-bold rounded-md bg-yellow-400/20 text-yellow-400 border border-yellow-400/30">
+            NIM
+          </span>
+        </div>
+      </div>
+
+      <!-- Split Number Counter -->
+      <div class="mb-6">
+        <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">Split With</label>
+        <div class="flex items-center gap-3">
+          <button id="decrease-btn" class="w-12 h-12 rounded-xl bg-gray-900 border border-gray-700 hover:border-gray-500 font-bold text-xl flex items-center justify-center transition active:scale-95">
+            -
+          </button>
+          <div class="flex-1 text-center font-mono text-xl font-bold bg-gray-900/60 border border-gray-800 py-2.5 rounded-xl">
+            <span id="split-count">2</span> <span class="text-sm font-normal text-gray-400">people</span>
+          </div>
+          <button id="increase-btn" class="w-12 h-12 rounded-xl bg-gray-900 border border-gray-700 hover:border-gray-500 font-bold text-xl flex items-center justify-center transition active:scale-95">
+            +
+          </button>
+        </div>
+      </div>
+
+      <!-- Receiver Address Input -->
+      <div class="mb-6">
+        <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
+          Recipient Nimiq Address
+        </label>
+        <input 
+          type="text" 
+          id="recipient-addr" 
+          placeholder="NQ..." 
+          value="NQ07 0000 0000 0000 0000 0000 0000 0000 0000"
+          class="w-full bg-gray-900 border border-gray-700/80 rounded-xl px-3.5 py-2.5 text-sm font-mono focus:outline-none focus:border-yellow-400 transition text-gray-300"
+        />
+        <p class="text-[11px] text-gray-500 mt-1">Paste your Nimiq Pay or Safe wallet address here.</p>
+      </div>
+
+      <!-- Calculated Share Result -->
+      <div class="bg-gradient-to-br from-yellow-500/10 to-amber-500/5 border border-yellow-500/20 rounded-2xl p-4 mb-6">
+        <div class="text-xs uppercase tracking-wider font-semibold text-yellow-300 mb-1">Each Person Pays</div>
+        <div class="flex items-baseline gap-2">
+          <span id="per-person-amount" class="text-3xl font-extrabold font-mono text-white">0.00</span>
+          <span id="per-person-curr" class="text-sm font-bold text-yellow-400">NIM</span>
+        </div>
+        <div id="per-person-equiv" class="text-xs text-gray-400 font-mono mt-0.5">≈ $0.00 USD</div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="grid grid-cols-2 gap-3">
+        <button id="pay-wallet-btn" class="w-full py-3 px-4 rounded-xl nimiq-gradient text-gray-950 font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-yellow-500/20 hover:brightness-105 active:scale-98 transition">
+          <i data-lucide="wallet" class="w-4 h-4"></i>
+          <span>Pay in App</span>
+        </button>
+        <button id="show-qr-btn" class="w-full py-3 px-4 rounded-xl bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white font-bold text-sm flex items-center justify-center gap-2 transition active:scale-98">
+          <i data-lucide="qr-code" class="w-4 h-4"></i>
+          <span>Show QR</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- History Log Section -->
+    <div class="glass-card rounded-2xl p-5 mb-6">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+          <i data-lucide="history" class="w-4 h-4 text-gray-400"></i>
+          <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300">Recent Splits</h2>
+        </div>
+        <button id="clear-history-btn" class="text-xs text-gray-500 hover:text-red-400 transition-colors">Clear</button>
+      </div>
+      <div id="history-list" class="space-y-2 text-xs">
+        <p class="text-gray-500 text-center py-4">No recent splits saved.</p>
+      </div>
+    </div>
+
+    <footer class="text-center text-xs text-gray-600">
+      Built for the Nimiq Mini Apps Competition 2026 • Mainnet Ready
+    </footer>
+  </div>
+
+  <!-- QR Code Modal -->
+  <div id="qr-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass-card max-w-sm w-full rounded-2xl p-6 text-center border border-gray-700">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-bold text-base">Scan to Pay Share</h3>
+        <button id="close-qr-btn" class="text-gray-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="bg-white p-4 rounded-2xl inline-block mx-auto mb-3 shadow-lg" id="qrcode-container"></div>
+      <div class="text-sm font-mono font-bold text-yellow-400 mb-1" id="qr-amount-display">0 NIM</div>
+      <p class="text-xs text-gray-400 break-all font-mono mb-4 px-2" id="qr-addr-display">NQ...</p>
+      <button id="qr-done-btn" class="w-full py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-sm font-bold transition">
+        Done
+      </button>
+    </div>
+  </div>
+
+  <!-- About / How to use Modal -->
+  <div id="about-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass-card max-w-md w-full rounded-2xl p-6 border border-gray-700 text-left">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-bold text-lg flex items-center gap-2">
+          <i data-lucide="info" class="w-5 h-5 text-yellow-400"></i>
+          About NimiqSplit
+        </h3>
+        <button id="close-about-btn" class="text-gray-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="space-y-3 text-xs text-gray-300 leading-relaxed max-h-[70vh] overflow-y-auto pr-1">
+        <p><strong>NimiqSplit</strong> is a decentralized, instant bill-splitting mini application running natively on the Nimiq network.</p>
+        
+        <h4 class="font-semibold text-white uppercase tracking-wider text-[11px] pt-2">Key Features:</h4>
+        <ul class="list-disc pl-4 space-y-1">
+          <li><strong>Real-time CoinGecko Rates:</strong> Fetches live NIM/USDT exchange rates on every split.</li>
+          <li><strong>Dual Currency:</strong> Split directly in NIM or USDT equivalent.</li>
+          <li><strong>Direct Wallet Deep-Links:</strong> Open directly in Nimiq Pay or Safe using standard Nimiq URI schemes.</li>
+          <li><strong>Instant QR Code Generator:</strong> Let friends scan and settle their share on their own devices.</li>
+          <li><strong>Local History:</strong> Keep track of your latest group payments locally.</li>
+        </ul>
+
+        <h4 class="font-semibold text-white uppercase tracking-wider text-[11px] pt-2">How to test on Mainnet:</h4>
+        <ol class="list-decimal pl-4 space-y-1 text-gray-400">
+          <li>Install <strong>Nimiq Pay</strong> on your smartphone.</li>
+          <li>Paste your Nimiq address in the Recipient field.</li>
+          <li>Enter total bill and tap "Pay in App" or "Show QR".</li>
+          <li>Nimiq Pay handles the instant settlement on Mainnet.</li>
+        </ol>
+      </div>
+      <button id="about-gotit-btn" class="mt-5 w-full py-2.5 rounded-xl nimiq-gradient text-gray-950 font-bold text-sm">
+        Got it!
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // App State
+    let selectedCurrency = 'NIM'; // 'NIM' | 'USDT'
+    let nimUsdPrice = 0.0014; // fallback price
+    let splitCount = 2;
+    let history = JSON.parse(localStorage.getItem('nimiqsplit_history') || '[]');
+
+    // Elements
+    const billInput = document.getElementById('bill-amount');
+    const currencyBadge = document.getElementById('currency-badge');
+    const currNimBtn = document.getElementById('curr-nim');
+    const currUsdtBtn = document.getElementById('curr-usdt');
+    const splitCountEl = document.getElementById('split-count');
+    const decreaseBtn = document.getElementById('decrease-btn');
+    const increaseBtn = document.getElementById('increase-btn');
+    const recipientInput = document.getElementById('recipient-addr');
+    const perPersonEl = document.getElementById('per-person-amount');
+    const perPersonCurrEl = document.getElementById('per-person-curr');
+    const perPersonEquivEl = document.getElementById('per-person-equiv');
+    const equivLabel = document.getElementById('equiv-label');
+    const rateDisplay = document.getElementById('rate-display');
+    const refreshRateBtn = document.getElementById('refresh-rate-btn');
+    const payWalletBtn = document.getElementById('pay-wallet-btn');
+    const showQrBtn = document.getElementById('show-qr-btn');
+    const qrModal = document.getElementById('qr-modal');
+    const closeQrBtn = document.getElementById('close-qr-btn');
+    const qrDoneBtn = document.getElementById('qr-done-btn');
+    const qrContainer = document.getElementById('qrcode-container');
+    const qrAmountDisplay = document.getElementById('qr-amount-display');
+    const qrAddrDisplay = document.getElementById('qr-addr-display');
+    const aboutBtn = document.getElementById('about-btn');
+    const aboutModal = document.getElementById('about-modal');
+    const closeAboutBtn = document.getElementById('close-about-btn');
+    const aboutGotItBtn = document.getElementById('about-gotit-btn');
+    const historyList = document.getElementById('history-list');
+    const clearHistoryBtn = document.getElementById('clear-history-btn');
+
+    let qrCodeInstance = null;
+
+    // Fetch Live Rates
+    async function fetchLiveRates() {
+      rateDisplay.innerText = "1 NIM = fetching...";
+      try {
+        const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=nimiq-2&vs_currencies=usd');
+        if (!res.ok) throw new Error("API error");
+        const data = await res.json();
+        if (data['nimiq-2'] && data['nimiq-2'].usd) {
+          nimUsdPrice = data['nimiq-2'].usd;
+          rateDisplay.innerText = `1 NIM = $${nimUsdPrice.toFixed(5)}`;
+          calculate();
+          return;
+        }
+      } catch (e) {
+        console.warn("Live rate failed, using fallback:", e);
+      }
+      rateDisplay.innerText = `1 NIM ≈ $${nimUsdPrice.toFixed(4)} (cached)`;
+      calculate();
+    }
+
+    function calculate() {
+      const amount = parseFloat(billInput.value) || 0;
+      const share = amount > 0 ? (amount / splitCount) : 0;
+
+      if (selectedCurrency === 'NIM') {
+        perPersonEl.innerText = share.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+        perPersonCurrEl.innerText = 'NIM';
+        const usdValue = share * nimUsdPrice;
+        perPersonEquivEl.innerText = `≈ $${usdValue.toFixed(2)} USD`;
+        equivLabel.innerText = `≈ $${(amount * nimUsdPrice).toFixed(2)} USD`;
+      } else {
+        perPersonEl.innerText = share.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        perPersonCurrEl.innerText = 'USDT';
+        const nimEquivalent = nimUsdPrice > 0 ? (share / nimUsdPrice) : 0;
+        perPersonEquivEl.innerText = `≈ ${nimEquivalent.toFixed(0)} NIM`;
+        equivLabel.innerText = `≈ ${(amount / nimUsdPrice).toFixed(0)} NIM`;
+      }
+    }
+
+    function getPayUri() {
+      const share = (parseFloat(billInput.value) || 0) / splitCount;
+      const addr = recipientInput.value.trim().replace(/\s+/g, '');
+      
+      // Calculate amount in NIM Luna (1 NIM = 100,000 Luna)
+      let nimAmount = selectedCurrency === 'NIM' ? share : (share / nimUsdPrice);
+      const luna = Math.round(nimAmount * 100000);
+      
+      return `nimiq:${addr}?amount=${luna}&message=NimiqSplit%20Share`;
+    }
+
+    function saveToHistory(shareAmount, currency) {
+      const entry = {
+        id: Date.now(),
+        date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        amount: shareAmount.toFixed(2),
+        currency: currency,
+        people: splitCount
+      };
+      history.unshift(entry);
+      if (history.length > 5) history.pop();
+      localStorage.setItem('nimiqsplit_history', JSON.stringify(history));
+      renderHistory();
+    }
+
+    function renderHistory() {
+      if (history.length === 0) {
+        historyList.innerHTML = `<p class="text-gray-500 text-center py-4">No recent splits saved.</p>`;
+        return;
+      }
+      historyList.innerHTML = history.map(item => `
+        <div class="flex items-center justify-between p-2.5 rounded-lg bg-gray-900/60 border border-gray-800/80">
+          <div>
+            <div class="font-bold text-white">${item.amount} ${item.currency} <span class="text-gray-400 font-normal">/ person</span></div>
+            <div class="text-[10px] text-gray-500">Split among ${item.people} • ${item.date}</div>
+          </div>
+          <span class="text-xs font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Saved</span>
+        </div>
+      `).join('');
+    }
+
+    // Switch Currency
+    currNimBtn.addEventListener('click', () => {
+      selectedCurrency = 'NIM';
+      currNimBtn.className = "py-2.5 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all nimiq-gradient text-gray-950 shadow";
+      currUsdtBtn.className = "py-2.5 rounded-lg text-sm font-bold flex items-center justify-center gap-2 text-gray-400 hover:text-white transition-all";
+      currencyBadge.innerText = "NIM";
+      calculate();
+    });
+
+    currUsdtBtn.addEventListener('click', () => {
+      selectedCurrency = 'USDT';
+      currUsdtBtn.className = "py-2.5 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all bg-emerald-600 text-white shadow";
+      currNimBtn.className = "py-2.5 rounded-lg text-sm font-bold flex items-center justify-center gap-2 text-gray-400 hover:text-white transition-all";
+      currencyBadge.innerText = "USDT";
+      calculate();
+    });
+
+    // Counter
+    increaseBtn.addEventListener('click', () => {
+      splitCount++;
+      splitCountEl.innerText = splitCount;
+      calculate();
+    });
+
+    decreaseBtn.addEventListener('click', () => {
+      if (splitCount > 1) {
+        splitCount--;
+        splitCountEl.innerText = splitCount;
+        calculate();
+      }
+    });
+
+    billInput.addEventListener('input', calculate);
+
+    refreshRateBtn.addEventListener('click', fetchLiveRates);
+
+    // Pay Wallet Button
+    payWalletBtn.addEventListener('click', () => {
+      const share = (parseFloat(billInput.value) || 0) / splitCount;
+      if (share <= 0) {
+        alert("Please enter a valid bill amount first!");
+        return;
+      }
+      saveToHistory(share, selectedCurrency);
+      const uri = getPayUri();
+      window.location.href = uri;
+    });
+
+    // Show QR Modal
+    showQrBtn.addEventListener('click', () => {
+      const share = (parseFloat(billInput.value) || 0) / splitCount;
+      if (share <= 0) {
+        alert("Please enter a valid bill amount first!");
+        return;
+      }
+      saveToHistory(share, selectedCurrency);
+      const uri = getPayUri();
+      
+      qrContainer.innerHTML = '';
+      qrCodeInstance = new QRCode(qrContainer, {
+        text: uri,
+        width: 180,
+        height: 180,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.M
+      });
+
+      qrAmountDisplay.innerText = `${perPersonEl.innerText} ${selectedCurrency}`;
+      qrAddrDisplay.innerText = recipientInput.value;
+      qrModal.classList.remove('hidden');
+    });
+
+    closeQrBtn.addEventListener('click', () => qrModal.classList.add('hidden'));
+    qrDoneBtn.addEventListener('click', () => qrModal.classList.add('hidden'));
+
+    // About Modal
+    aboutBtn.addEventListener('click', () => aboutModal.classList.remove('hidden'));
+    closeAboutBtn.addEventListener('click', () => aboutModal.classList.add('hidden'));
+    aboutGotItBtn.addEventListener('click', () => aboutModal.classList.add('hidden'));
+
+    // Clear History
+    clearHistoryBtn.addEventListener('click', () => {
+      history = [];
+      localStorage.removeItem('nimiqsplit_history');
+      renderHistory();
+    });
+
+    // Init
+    lucide.createIcons();
+    fetchLiveRates();
+    renderHistory();
+  </script>
+</body>
+</html>
