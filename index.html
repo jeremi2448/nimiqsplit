@@ -26,7 +26,7 @@
       background: linear-gradient(135deg, #E9B213 0%, #F6C636 100%);
     }
     .glass-card {
-      background: rgba(22, 27, 34, 0.8);
+      background: rgba(22, 27, 34, 0.85);
       backdrop-filter: blur(12px);
       border: 1px solid rgba(240, 246, 252, 0.08);
     }
@@ -149,7 +149,7 @@
           value="NQ07 0000 0000 0000 0000 0000 0000 0000 0000"
           class="w-full bg-gray-900 border border-gray-700/80 rounded-xl px-3.5 py-2.5 text-xs font-mono focus:outline-none focus:border-yellow-400 transition text-gray-300"
         />
-        <p class="text-[11px] text-gray-500 mt-1">Nimiq Pay, Safe or Web Wallet address.</p>
+        <p class="text-[11px] text-gray-500 mt-1">Recipient Nimiq Safe, Pay or Web Wallet address.</p>
       </div>
 
       <!-- Calculated Share Result -->
@@ -208,9 +208,62 @@
     </div>
   </div>
 
+  <!-- Connect Wallet Modal (Native modern popup with options) -->
+  <div id="wallet-modal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass-card max-w-sm w-full rounded-2xl p-6 border border-gray-700 text-left shadow-2xl">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-bold text-base flex items-center gap-2 text-white">
+          <i data-lucide="wallet" class="w-5 h-5 text-yellow-400"></i>
+          Connect Nimiq Wallet
+        </h3>
+        <button id="close-wallet-modal-btn" class="text-gray-400 hover:text-white p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      
+      <p class="text-xs text-gray-400 mb-4">
+        Choose how you want to connect your Nimiq account:
+      </p>
+
+      <div class="space-y-3 mb-5">
+        <!-- Option 1: Official Nimiq Hub Login -->
+        <button id="hub-login-btn" class="w-full p-3.5 rounded-xl border border-yellow-500/30 bg-yellow-500/10 hover:bg-yellow-500/20 active:scale-98 transition flex items-center gap-3 text-left">
+          <div class="w-9 h-9 rounded-lg nimiq-gradient flex items-center justify-center text-gray-950 shrink-0 font-bold">
+            ⚡
+          </div>
+          <div class="min-w-0">
+            <div class="text-xs font-bold text-yellow-300">Nimiq Safe & Hub</div>
+            <div class="text-[11px] text-gray-400">Web login via official hub.nimiq.com</div>
+          </div>
+        </button>
+
+        <!-- Option 2: Enter / Paste Address -->
+        <div class="p-3.5 rounded-xl bg-gray-900/90 border border-gray-800">
+          <label class="block text-[11px] font-bold text-gray-300 uppercase tracking-wider mb-2">
+            Paste Nimiq Address
+          </label>
+          <div class="space-y-2">
+            <input 
+              type="text" 
+              id="manual-wallet-input" 
+              placeholder="NQ..." 
+              class="w-full bg-gray-950 border border-gray-700 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:border-yellow-400 text-white"
+            />
+            <button id="manual-wallet-save-btn" class="w-full py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-white font-bold text-xs transition">
+              Use this Address
+            </button>
+          </div>
+          <p class="text-[10px] text-gray-500 mt-2">
+            Tip: Open <strong>Nimiq Pay</strong> on your mobile, copy your receive address, and paste it here.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- QR Code Modal -->
   <div id="qr-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="glass-card max-w-sm w-full rounded-2xl p-6 text-center border border-gray-700">
+    <div class="glass-card max-w-sm w-full rounded-2xl p-6 text-center border border-gray-700 shadow-2xl">
       <div class="flex justify-between items-center mb-4">
         <h3 class="font-bold text-base">Scan to Pay Share</h3>
         <button id="close-qr-btn" class="text-gray-400 hover:text-white">
@@ -228,7 +281,7 @@
 
   <!-- About / How to use Modal -->
   <div id="about-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="glass-card max-w-md w-full rounded-2xl p-6 border border-gray-700 text-left">
+    <div class="glass-card max-w-md w-full rounded-2xl p-6 border border-gray-700 text-left shadow-2xl">
       <div class="flex justify-between items-center mb-4">
         <h3 class="font-bold text-lg flex items-center gap-2">
           <i data-lucide="info" class="w-5 h-5 text-yellow-400"></i>
@@ -252,7 +305,7 @@
 
         <h4 class="font-semibold text-white uppercase tracking-wider text-[11px] pt-2">Step-by-step:</h4>
         <ol class="list-decimal pl-4 space-y-1 text-gray-400">
-          <li>Tap <strong>Connect Wallet</strong> to auto-fill your recipient address (or type any Nimiq address).</li>
+          <li>Tap <strong>Connect Wallet</strong> to auto-fill your recipient address (or paste your Nimiq Pay address).</li>
           <li>Enter total bill and choose currency (NIM or USDT).</li>
           <li>Select how many people to split with.</li>
           <li>Tap <strong>Pay via Wallet</strong> to trigger the transaction, or <strong>Show QR</strong> for your friends to scan!</li>
@@ -272,7 +325,7 @@
     let history = JSON.parse(localStorage.getItem('nimiqsplit_history') || '[]');
     let connectedAddress = localStorage.getItem('nimiqsplit_connected_addr') || null;
 
-    // Initialize Nimiq Hub API (Official client)
+    // Initialize Nimiq Hub API
     let hubApi = null;
     try {
       if (window.HubApi) {
@@ -313,11 +366,18 @@
     const aboutGotItBtn = document.getElementById('about-gotit-btn');
     const historyList = document.getElementById('history-list');
     const clearHistoryBtn = document.getElementById('clear-history-btn');
+    
+    // Wallet UI elements
     const connectWalletBtn = document.getElementById('connect-wallet-btn');
     const connectWalletText = document.getElementById('connect-wallet-text');
     const walletBanner = document.getElementById('wallet-banner');
     const connectedAddressDisplay = document.getElementById('connected-address-display');
     const disconnectWalletBtn = document.getElementById('disconnect-wallet-btn');
+    const walletModal = document.getElementById('wallet-modal');
+    const closeWalletModalBtn = document.getElementById('close-wallet-modal-btn');
+    const hubLoginBtn = document.getElementById('hub-login-btn');
+    const manualWalletInput = document.getElementById('manual-wallet-input');
+    const manualWalletSaveBtn = document.getElementById('manual-wallet-save-btn');
 
     let qrCodeInstance = null;
 
@@ -335,46 +395,57 @@
       }
     }
 
-    // Connect Wallet Handler via Nimiq Hub API
-    connectWalletBtn.addEventListener('click', async () => {
+    function setConnectedWallet(address) {
+      connectedAddress = address.trim();
+      localStorage.setItem('nimiqsplit_connected_addr', connectedAddress);
+      recipientInput.value = connectedAddress;
+      updateWalletUi();
+      walletModal.classList.add('hidden');
+    }
+
+    // Open Custom Wallet Modal
+    connectWalletBtn.addEventListener('click', () => {
       if (connectedAddress) {
-        // already connected, fill recipient
         recipientInput.value = connectedAddress;
-        alert('Your wallet is connected: ' + connectedAddress);
+        alert('Active wallet: ' + connectedAddress);
         return;
       }
+      manualWalletInput.value = '';
+      walletModal.classList.remove('hidden');
+    });
 
-      if (!hubApi) {
-        // Fallback prompt for mobile without Hub API
-        const manual = prompt('Enter your Nimiq Wallet Address (starts with NQ):', '');
-        if (manual && manual.trim().startsWith('NQ')) {
-          connectedAddress = manual.trim();
-          localStorage.setItem('nimiqsplit_connected_addr', connectedAddress);
-          recipientInput.value = connectedAddress;
-          updateWalletUi();
+    closeWalletModalBtn.addEventListener('click', () => {
+      walletModal.classList.add('hidden');
+    });
+
+    // Option 1: Official Hub Login
+    hubLoginBtn.addEventListener('click', async () => {
+      if (hubApi) {
+        try {
+          const result = await hubApi.chooseAddress({
+            appName: 'NimiqSplit'
+          });
+          if (result && result.address) {
+            setConnectedWallet(result.address);
+            return;
+          }
+        } catch (err) {
+          console.warn('Hub connection error / popup blocked:', err);
         }
+      }
+      // If Hub popup blocked or error on mobile, focus input
+      manualWalletInput.focus();
+      alert('Hub popup was not completed. You can paste your Nimiq address directly below.');
+    });
+
+    // Option 2: Paste Address Save
+    manualWalletSaveBtn.addEventListener('click', () => {
+      const val = manualWalletInput.value.trim();
+      if (!val) {
+        alert('Please enter or paste your Nimiq address.');
         return;
       }
-
-      try {
-        connectWalletText.innerText = 'Connecting...';
-        // Requests accounts list or login from Nimiq Hub
-        const accounts = await hubApi.chooseAddress({
-          appName: 'NimiqSplit'
-        });
-        
-        if (accounts && accounts.address) {
-          connectedAddress = accounts.address;
-          localStorage.setItem('nimiqsplit_connected_addr', connectedAddress);
-          recipientInput.value = connectedAddress;
-          updateWalletUi();
-        } else {
-          updateWalletUi();
-        }
-      } catch (err) {
-        console.warn('Hub connection canceled or failed:', err);
-        updateWalletUi();
-      }
+      setConnectedWallet(val);
     });
 
     disconnectWalletBtn.addEventListener('click', () => {
@@ -430,8 +501,8 @@
 
     function getShareInLuna() {
       const share = (parseFloat(billInput.value) || 0) / splitCount;
-      let nimAmount = selectedCurrency === 'NIM' ? share : (share / nimUsdPrice);
-      return Math.round(nimAmount * 100000); // 1 NIM = 100,000 Luna
+      const nimAmount = selectedCurrency === 'NIM' ? share : (share / nimUsdPrice);
+      return Math.round(nimAmount * 100000);
     }
 
     function getCleanRecipient() {
@@ -439,8 +510,8 @@
     }
 
     function getPayUri() {
-      const addr = getCleanRecipient();
       const luna = getShareInLuna();
+      const addr = getCleanRecipient();
       return `nimiq:${addr}?amount=${luna}&message=NimiqSplit%20Share`;
     }
 
