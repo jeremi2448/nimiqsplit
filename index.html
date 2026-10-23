@@ -40,7 +40,7 @@
       <div class="flex items-center gap-2.5 min-w-0">
         <div class="w-9 h-9 shrink-0 rounded-xl nimiq-gradient flex items-center justify-center shadow-lg shadow-yellow-500/20">
           <svg class="w-5 h-5 text-gray-900 font-bold" viewBox="0 0 24 24" fill="currentColor">
-            <polygon points="12,2 22,8.5 22,15.5 12,22 2,15.5 12,22 2,15.5 2,8.5"/>
+            <polygon points="12,2 22,8.5 22,15.5 12,22 2,15.5 2,8.5"/>
           </svg>
         </div>
         <div class="min-w-0">
@@ -272,7 +272,7 @@
     let history = JSON.parse(localStorage.getItem('nimiqsplit_history') || '[]');
     let connectedAddress = localStorage.getItem('nimiqsplit_connected_addr') || null;
 
-    // HubApi singleton
+    // HubApi singleton (redirect on mobile instead of broken popup)
     function getHub() {
       if (window.HubApi) {
         return new window.HubApi('https://hub.nimiq.com');
@@ -321,6 +321,33 @@
 
     let qrCodeInstance = null;
 
+    // Handle Return from Nimiq Hub Redirect
+    async function checkRedirectResponse() {
+      const hub = getHub();
+      if (hub) {
+        try {
+          // Check if user was redirected back with signed response or address
+          hub.on(window.HubApi.Events.CHOOSE_ADDRESS, (result) => {
+            if (result && result.address) {
+              setConnectedWallet(result.address);
+            }
+          });
+          hub.on(window.HubApi.Events.CHECKOUT, (tx) => {
+            if (tx) {
+              const lastPending = history.find(h => h.status === 'Pending');
+              if (lastPending) lastPending.status = 'Paid';
+              localStorage.setItem('nimiqsplit_history', JSON.stringify(history));
+              renderHistory();
+              alert('Payment confirmed on Nimiq network!');
+            }
+          });
+          hub.checkRedirectResponse();
+        } catch (e) {
+          console.log('No redirect response in URL');
+        }
+      }
+    }
+
     // Update Wallet UI
     function updateWalletUi() {
       if (connectedAddress) {
@@ -342,7 +369,7 @@
       updateWalletUi();
     }
 
-    // Direct Nimiq Hub Connect action
+    // Direct Nimiq Hub Connect action (redirect mode works seamlessly on mobile)
     connectWalletBtn.addEventListener('click', async () => {
       if (connectedAddress) {
         recipientInput.value = connectedAddress;
@@ -354,16 +381,12 @@
       if (hub) {
         try {
           connectWalletText.innerText = 'Connecting...';
-          const result = await hub.chooseAddress({
+          // Use redirect on mobile or chooseAddress
+          await hub.chooseAddress({
             appName: 'NimiqSplit'
           });
-          if (result && result.address) {
-            setConnectedWallet(result.address);
-          } else {
-            updateWalletUi();
-          }
         } catch (err) {
-          console.warn('Hub connection error / canceled:', err);
+          console.warn('Hub connection error:', err);
           updateWalletUi();
         }
       } else {
@@ -594,6 +617,7 @@
 
     // Init
     lucide.createIcons();
+    checkRedirectResponse();
     updateWalletUi();
     fetchLiveRates();
     renderHistory();
