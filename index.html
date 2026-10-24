@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>NimiqSplit - Fast Bill Splitting on Nimiq</title>
+  <title>NimiqSplit - Bill Splitter for Nimiq</title>
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -11,9 +11,8 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <!-- QRCode.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-
-  <!-- Nimiq Hub API Officielle -->
-  <script src="https://unpkg.com/@nimiq/hub-api@v1.3.0/dist/HubApi.standalone.umd.js"></script>
+  <!-- Nimiq Hub API v1.3 Standalone -->
+  <script src="https://unpkg.com/@nimiq/hub-api@1.3.0/dist/HubApi.standalone.umd.js"></script>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
@@ -59,7 +58,7 @@
 
         <button id="connectWalletBtn" class="flex items-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-xl text-xs font-semibold text-gray-200 transition">
           <i data-lucide="wallet" class="w-4 h-4 text-amber-400"></i>
-          <span id="walletBtnText">Connect</span>
+          <span id="walletBtnText">Connect Wallet</span>
         </button>
       </div>
     </div>
@@ -156,6 +155,40 @@
     </div>
   </main>
 
+  <!-- WALLET SELECTION MODAL (Mobile friendly) -->
+  <div id="walletSelectModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-[#161b22] border border-gray-800 rounded-3xl p-6 max-w-sm w-full shadow-2xl">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-bold text-white text-base">Connect Wallet</h3>
+        <button id="closeWalletSelectBtn" class="text-gray-400 hover:text-white">✕</button>
+      </div>
+      
+      <p class="text-xs text-gray-400 mb-4">Choose how you want to connect your Nimiq address:</p>
+
+      <div class="space-y-3">
+        <button id="selectNimiqHubBtn" class="w-full p-3 rounded-2xl bg-gray-800/80 hover:bg-gray-800 border border-gray-700 flex items-center gap-3 transition text-left group">
+          <div class="w-10 h-10 rounded-xl nimiq-gradient-bg flex items-center justify-center text-slate-900 font-bold shrink-0">
+            ⚡
+          </div>
+          <div class="flex-1 truncate">
+            <div class="font-bold text-white text-xs group-hover:text-amber-400 transition">Nimiq Hub (Popup / Safe)</div>
+            <div class="text-[10px] text-gray-400">Connect via hub.nimiq.com</div>
+          </div>
+        </button>
+
+        <button id="selectManualAddrBtn" class="w-full p-3 rounded-2xl bg-gray-800/80 hover:bg-gray-800 border border-gray-700 flex items-center gap-3 transition text-left group">
+          <div class="w-10 h-10 rounded-xl bg-gray-700 flex items-center justify-center text-amber-400 font-bold shrink-0">
+            <i data-lucide="key" class="w-5 h-5"></i>
+          </div>
+          <div class="flex-1 truncate">
+            <div class="font-bold text-white text-xs group-hover:text-amber-400 transition">Paste Nimiq Address</div>
+            <div class="text-[10px] text-gray-400">Enter your NQ... address directly</div>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- QR CODE MODAL -->
   <div id="qrModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-[#161b22] border border-gray-800 rounded-3xl p-6 max-w-sm w-full flex flex-col items-center shadow-2xl">
@@ -207,9 +240,18 @@
     // --- NIMIQ HUB INITIALIZATION ---
     let hubApi = null;
     try {
-      if (window.HubApi) {
-        // Mode direct Hub Nimiq officiel
+      if (typeof HubApi !== 'undefined') {
         hubApi = new HubApi('https://hub.nimiq.com');
+        // Handle redirect returns if any
+        if (hubApi.checkRedirectResponse) {
+          hubApi.checkRedirectResponse().then(res => {
+            if (res && res.address) {
+              connectedAddress = res.address;
+              localStorage.setItem('nimiq_wallet_address', connectedAddress);
+              updateWalletUI();
+            }
+          }).catch(() => {});
+        }
       }
     } catch (e) {
       console.warn("HubApi initialization:", e);
@@ -234,6 +276,11 @@
     const disconnectBtn = document.getElementById('disconnectWalletBtn');
     const useMyAddressBtn = document.getElementById('useMyAddressBtn');
 
+    const walletSelectModal = document.getElementById('walletSelectModal');
+    const closeWalletSelectBtn = document.getElementById('closeWalletSelectBtn');
+    const selectNimiqHubBtn = document.getElementById('selectNimiqHubBtn');
+    const selectManualAddrBtn = document.getElementById('selectManualAddrBtn');
+
     const payWithHubBtn = document.getElementById('payWithHubBtn');
     const showQrBtn = document.getElementById('showQrBtn');
     const qrModal = document.getElementById('qrModal');
@@ -257,7 +304,7 @@
           recalculate();
         }
       } catch (err) {
-        console.warn("Rate fetch fallback to default:", nimRateUsd);
+        console.warn("Fallback to default rate:", nimRateUsd);
       }
     }
 
@@ -317,18 +364,26 @@
         walletBanner.classList.remove('hidden');
         if (!recipientInput.value) recipientInput.value = connectedAddress;
       } else {
-        walletBtnText.innerText = 'Connect';
+        walletBtnText.innerText = 'Connect Wallet';
         walletBanner.classList.add('hidden');
       }
     }
 
-    // --- NIMIQ CONNECT / CHOOSE ADDRESS ---
-    connectWalletBtn.addEventListener('click', async () => {
+    // Modal connect handlers
+    connectWalletBtn.addEventListener('click', () => {
       if (connectedAddress) return;
+      walletSelectModal.classList.remove('hidden');
+    });
 
+    closeWalletSelectBtn.addEventListener('click', () => {
+      walletSelectModal.classList.add('hidden');
+    });
+
+    // Connect via Hub API
+    selectNimiqHubBtn.addEventListener('click', async () => {
+      walletSelectModal.classList.add('hidden');
       if (hubApi) {
         try {
-          // Appel Hub officiel pour sélectionner / connecter une adresse
           const res = await hubApi.chooseAddress({
             appName: 'NimiqSplit'
           });
@@ -336,19 +391,26 @@
             connectedAddress = res.address;
             localStorage.setItem('nimiq_wallet_address', connectedAddress);
             updateWalletUI();
-            return;
           }
         } catch (err) {
-          console.log("Hub chooseAddress canceled or redirected:", err);
+          console.warn("Hub chooseAddress:", err);
+          alert("Hub popup was dismissed or blocked. You can also paste your address directly!");
         }
+      } else {
+        alert("Nimiq Hub is loading, please try pasting your address.");
       }
+    });
 
-      // Repli manuel transparent si l'utilisateur bloque les fenêtres
-      const manual = prompt("Enter your Nimiq Address (e.g. NQ...):");
-      if (manual && manual.trim().startsWith('NQ')) {
+    // Connect via Manual Address
+    selectManualAddrBtn.addEventListener('click', () => {
+      walletSelectModal.classList.add('hidden');
+      const manual = prompt("Enter your Nimiq address (e.g. NQ...):");
+      if (manual && manual.trim().length >= 30) {
         connectedAddress = manual.trim();
         localStorage.setItem('nimiq_wallet_address', connectedAddress);
         updateWalletUI();
+      } else if (manual) {
+        alert("Please enter a valid Nimiq address starting with NQ.");
       }
     });
 
@@ -380,7 +442,7 @@
         return;
       }
 
-      // Calcul des Lunas (1 NIM = 100 000 Lunas)
+      // Convert to Lunas (1 NIM = 100,000 Lunas)
       const nimAmount = selectedCurrency === 'NIM' ? perPerson : (perPerson / nimRateUsd);
       const lunas = Math.round(nimAmount * 100000);
 
@@ -393,10 +455,9 @@
           });
           saveHistory(nimAmount, 'Paid with Hub');
         } catch (e) {
-          console.log("Checkout closed or redirected:", e);
+          console.log("Checkout closed:", e);
         }
       } else {
-        // Redirection directe vers le format standard Nimiq Safe
         const uri = `nimiq:${recipient}?amount=${lunas}`;
         window.location.href = uri;
       }
