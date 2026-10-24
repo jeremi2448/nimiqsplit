@@ -4,15 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>NimiqSplit - Fast Bill Splitting on Nimiq</title>
-
+  
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <!-- QRCode.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
   <!-- Nimiq Hub API Officielle -->
-  <script src="https://unpkg.com/@nimiq/hub-api@v1.4.1/dist/standalone/HubApi.standalone.umd.js"></script>
+  <script src="https://unpkg.com/@nimiq/hub-api@v1.3.0/dist/HubApi.standalone.umd.js"></script>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
@@ -24,240 +25,463 @@
     .font-mono {
       font-family: 'Fira Code', monospace;
     }
-    input[type=number]::-webkit-inner-spin-button,
-    input[type=number]::-webkit-outer-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
+    .nimiq-gradient-bg {
+      background: linear-gradient(135deg, #E9B200 0%, #FFA800 100%);
+    }
+    .nimiq-gradient-text {
+      background: linear-gradient(135deg, #E9B200 0%, #FFA800 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col items-center justify-start p-4 sm:p-6 pb-20 selection:bg-amber-400 selection:text-black">
+<body class="min-h-screen flex flex-col justify-between selection:bg-amber-500 selection:text-black">
 
-  <div class="w-full max-w-lg space-y-5">
-    
-    <!-- Top Bar -->
-    <header class="flex items-center justify-between border-b border-gray-800 pb-4 pt-2">
-      <div class="flex items-center space-x-2">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-300 flex items-center justify-center shadow-lg shadow-amber-500/20">
-          <i data-lucide="zap" class="w-6 h-6 text-gray-950 fill-current"></i>
+  <!-- HEADER -->
+  <header class="w-full border-b border-gray-800 bg-[#161b22]/80 backdrop-blur sticky top-0 z-40">
+    <div class="max-w-xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <div class="w-9 h-9 rounded-xl nimiq-gradient-bg flex items-center justify-center text-slate-900 shadow-lg shadow-amber-500/20 font-black text-xl">
+          ⚡
         </div>
         <div>
-          <h1 class="font-extrabold text-xl tracking-tight bg-gradient-to-r from-amber-400 to-yellow-200 bg-clip-text text-transparent">NimiqSplit</h1>
-          <p class="text-[11px] text-gray-400 font-medium">Fast Bill Splitting for Nimiq (NIM)</p>
+          <h1 class="font-bold text-lg leading-tight flex items-center gap-1.5">
+            Nimiq<span class="nimiq-gradient-text">Split</span>
+          </h1>
+          <p class="text-[10px] text-gray-400 font-mono tracking-wider">NIMIQ BILL SPLITTER</p>
         </div>
       </div>
-      
-      <div class="flex items-center space-x-2">
-        <button id="aboutBtn" class="p-2.5 rounded-xl border border-gray-700/80 bg-gray-800/60 hover:bg-gray-700 text-gray-300 hover:text-white transition shadow-sm" title="About">
+
+      <div class="flex items-center gap-2">
+        <button id="aboutBtn" class="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-gray-800 transition">
           <i data-lucide="help-circle" class="w-5 h-5"></i>
         </button>
-        <button id="walletBtn" class="flex items-center space-x-2 text-xs font-semibold px-3 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-gray-950 transition shadow-sm">
-          <i data-lucide="wallet" class="w-4 h-4"></i>
-          <span id="walletBtnLabel">Connect Wallet</span>
+
+        <button id="connectWalletBtn" class="flex items-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-xl text-xs font-semibold text-gray-200 transition">
+          <i data-lucide="wallet" class="w-4 h-4 text-amber-400"></i>
+          <span id="walletBtnText">Connect</span>
         </button>
       </div>
-    </header>
+    </div>
+  </header>
 
-    <!-- Connected Wallet Status Card -->
-    <div id="walletBanner" class="hidden p-3.5 bg-gray-900/90 border border-amber-500/30 rounded-2xl flex items-center justify-between shadow-inner">
-      <div class="flex items-center space-x-3 overflow-hidden">
-        <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse flex-shrink-0"></div>
-        <div class="truncate">
-          <p class="text-[10px] uppercase font-bold tracking-wider text-gray-400">Connected Wallet</p>
-          <p id="connectedAddr" class="text-xs font-mono text-amber-300 truncate">NQ...</p>
-        </div>
+  <!-- MAIN CONTAINER -->
+  <main class="w-full max-w-xl mx-auto px-4 py-6 flex-1 flex flex-col gap-6">
+
+    <!-- WALLET BANNER (Active Connected State) -->
+    <div id="walletBanner" class="hidden p-3 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center justify-between text-xs">
+      <div class="flex items-center gap-2 truncate">
+        <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+        <span class="text-gray-400">Connected:</span>
+        <span id="connectedAddrDisplay" class="font-mono text-amber-300 font-medium truncate max-w-[200px]"></span>
       </div>
-      <button id="disconnectBtn" class="text-xs text-gray-400 hover:text-red-400 px-2.5 py-1.5 rounded-lg border border-gray-700 hover:border-red-500/30 transition flex-shrink-0">
-        Disconnect
+      <button id="disconnectWalletBtn" class="text-gray-400 hover:text-red-400 p-1">
+        <i data-lucide="log-out" class="w-4 h-4"></i>
       </button>
     </div>
 
-    <!-- Main Calculation Card -->
-    <main class="bg-gray-900/60 backdrop-blur border border-gray-800/80 rounded-3xl p-5 sm:p-6 shadow-2xl space-y-5">
-      
-      <!-- Currency Switcher -->
-      <div>
-        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Input Currency</label>
-        <div class="grid grid-cols-4 gap-2 bg-gray-950/60 p-1.5 rounded-2xl border border-gray-800">
-          <button type="button" data-currency="NIM" class="curr-tab py-2 text-xs font-bold rounded-xl transition bg-amber-400 text-gray-950 shadow-sm">NIM</button>
-          <button type="button" data-currency="USD" class="curr-tab py-2 text-xs font-bold rounded-xl transition text-gray-400 hover:text-white">USD</button>
-          <button type="button" data-currency="EUR" class="curr-tab py-2 text-xs font-bold rounded-xl transition text-gray-400 hover:text-white">EUR</button>
-          <button type="button" data-currency="XOF" class="curr-tab py-2 text-xs font-bold rounded-xl transition text-gray-400 hover:text-white">CFA</button>
-        </div>
-        <div id="rateInfo" class="text-right text-[11px] text-gray-500 mt-1 font-mono">1 NIM ≈ $0.0014 USD</div>
-      </div>
-
-      <!-- Total Amount -->
-      <div>
-        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Total Amount</label>
-        <div class="relative flex items-center">
-          <input type="number" id="totalAmountInput" step="any" min="0" placeholder="0.00" 
-                 class="w-full bg-gray-950/80 border border-gray-700/80 focus:border-amber-400 rounded-2xl py-3.5 pl-4 pr-16 text-xl font-bold font-mono text-white outline-none transition" />
-          <span id="currencyUnit" class="absolute right-4 text-xs font-bold text-gray-400 uppercase">NIM</span>
+    <!-- SPLIT CALCULATOR CARD -->
+    <div class="bg-[#161b22] border border-gray-800 rounded-3xl p-5 md:p-6 shadow-xl">
+      <div class="flex items-center justify-between pb-4 border-b border-gray-800">
+        <span class="text-xs uppercase tracking-widest text-gray-400 font-bold">Split Calculator</span>
+        <div class="flex gap-1 bg-gray-900 p-1 rounded-xl border border-gray-800 text-xs">
+          <button id="currNim" class="px-2.5 py-1 rounded-lg bg-amber-400 text-slate-900 font-bold transition">NIM</button>
+          <button id="currUsd" class="px-2.5 py-1 rounded-lg text-gray-400 font-bold hover:text-white transition">USD</button>
         </div>
       </div>
 
-      <!-- People Split Counter -->
-      <div>
-        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Split Between</label>
-        <div class="flex items-center space-x-3">
-          <button id="minusPersonBtn" class="w-12 h-12 bg-gray-800 hover:bg-gray-700 active:scale-95 rounded-2xl flex items-center justify-center font-bold text-lg text-white border border-gray-700 transition">
-            -
-          </button>
-          <div class="flex-1 bg-gray-950/80 border border-gray-700/80 rounded-2xl py-3 flex items-center justify-center space-x-2">
-            <i data-lucide="users" class="w-5 h-5 text-amber-400"></i>
-            <span id="peopleCount" class="text-lg font-bold font-mono text-white">2</span>
-            <span class="text-xs text-gray-400">people</span>
+      <div class="mt-5 space-y-4">
+        <!-- Amount Input -->
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 mb-1.5">Total Bill Amount</label>
+          <div class="relative">
+            <input id="totalAmountInput" type="number" step="any" placeholder="0.00" class="w-full bg-[#0d1117] border border-gray-700 focus:border-amber-400 rounded-2xl px-4 py-3 text-lg font-bold text-white outline-none transition placeholder:text-gray-600">
+            <span id="activeCurrencyUnit" class="absolute right-4 top-1/2 -translate-y-1/2 font-mono text-sm text-gray-400 font-bold">NIM</span>
           </div>
-          <button id="plusPersonBtn" class="w-12 h-12 bg-gray-800 hover:bg-gray-700 active:scale-95 rounded-2xl flex items-center justify-center font-bold text-lg text-white border border-gray-700 transition">
-            +
-          </button>
+          <div id="convertedTotalHelp" class="mt-1 text-[11px] text-gray-500 font-mono">≈ 0.00 USD</div>
         </div>
-      </div>
 
-      <!-- Tip Selection -->
-      <div>
-        <div class="flex items-center justify-between mb-1.5">
-          <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Add Tip</label>
-          <span id="tipLabel" class="text-xs font-bold text-amber-400 font-mono">0%</span>
+        <!-- Participants Counter -->
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 mb-1.5">Number of People</label>
+          <div class="flex items-center bg-[#0d1117] border border-gray-700 rounded-2xl p-1.5">
+            <button id="decreasePeopleBtn" class="w-10 h-10 rounded-xl bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-lg font-bold transition active:scale-95">-</button>
+            <input id="peopleCountInput" type="number" min="1" value="2" class="flex-1 bg-transparent text-center font-bold text-lg text-white outline-none">
+            <button id="increasePeopleBtn" class="w-10 h-10 rounded-xl bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-lg font-bold transition active:scale-95">+</button>
+          </div>
         </div>
-        <div class="grid grid-cols-4 gap-2">
-          <button type="button" data-tip="0" class="tip-btn py-2 text-xs font-bold rounded-xl border border-amber-400/50 bg-amber-400 text-gray-950 transition">0%</button>
-          <button type="button" data-tip="5" class="tip-btn py-2 text-xs font-bold rounded-xl border border-gray-800 bg-gray-950/60 text-gray-300 hover:bg-gray-800 transition">5%</button>
-          <button type="button" data-tip="10" class="tip-btn py-2 text-xs font-bold rounded-xl border border-gray-800 bg-gray-950/60 text-gray-300 hover:bg-gray-800 transition">10%</button>
-          <button type="button" data-tip="15" class="tip-btn py-2 text-xs font-bold rounded-xl border border-gray-800 bg-gray-950/60 text-gray-300 hover:bg-gray-800 transition">15%</button>
-        </div>
-      </div>
 
-      <!-- Recipient Nimiq Address -->
-      <div>
-        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Recipient Nimiq Address</label>
-        <div class="relative flex items-center">
-          <input type="text" id="recipientInput" placeholder="NQ00 0000 0000 0000 0000 0000 0000 0000 0000" 
-                 class="w-full bg-gray-950/80 border border-gray-700/80 focus:border-amber-400 rounded-2xl py-3 pl-3.5 pr-20 text-xs font-mono text-white outline-none transition tracking-wide" />
-          <button id="useMyWalletBtn" class="hidden absolute right-2 text-[10px] font-bold px-2 py-1 bg-amber-400/20 text-amber-300 hover:bg-amber-400/30 rounded-lg transition">
-            Use Mine
-          </button>
+        <!-- Receiver Address -->
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 mb-1.5">Receiver Nimiq Address</label>
+          <div class="relative">
+            <input id="recipientAddressInput" type="text" placeholder="NQ... or connect wallet" class="w-full bg-[#0d1117] border border-gray-700 focus:border-amber-400 rounded-2xl px-4 py-3 text-xs font-mono text-white outline-none transition placeholder:text-gray-600">
+            <button id="useMyAddressBtn" title="Use my address" class="absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1 text-[10px] bg-gray-800 hover:bg-gray-700 text-amber-400 font-bold rounded-lg border border-gray-700">ME</button>
+          </div>
         </div>
       </div>
 
       <!-- Result Card -->
-      <div class="bg-gradient-to-br from-gray-950 to-gray-900 border border-amber-400/30 rounded-2xl p-4.5 space-y-3 shadow-lg">
-        <div class="flex justify-between items-baseline">
-          <span class="text-xs uppercase font-bold tracking-wider text-gray-400">Share Per Person</span>
-          <div class="text-right">
-            <div id="perPerson" class="text-3xl font-black text-amber-400 font-mono tracking-tight">0.00</div>
-            <div id="perPersonEquivalent" class="text-[11px] text-gray-400 font-mono font-medium">≈ 0 NIM</div>
-          </div>
+      <div class="mt-6 p-4 rounded-2xl bg-gradient-to-br from-amber-400/10 via-amber-500/5 to-transparent border border-amber-400/20 text-center">
+        <p class="text-xs text-amber-400/80 font-semibold uppercase tracking-wider mb-1">Each Person Pays</p>
+        <div class="text-3xl font-extrabold text-white font-mono flex items-center justify-center gap-1.5">
+          <span id="perPersonAmountDisplay">0.00</span>
+          <span id="resultCurrencyDisplay" class="text-amber-400 text-xl font-bold">NIM</span>
         </div>
-        
-        <div class="pt-2 border-t border-gray-800/80 flex justify-between text-xs text-gray-400">
-          <span>Total With Tip:</span>
-          <span id="grandTotal" class="font-bold text-gray-200 font-mono">0.00</span>
-        </div>
+        <p id="perPersonConvertedDisplay" class="text-xs text-gray-400 font-mono mt-1">≈ 0.00 USD</p>
       </div>
 
       <!-- Action Buttons -->
-      <div class="space-y-2 pt-1">
-        <button id="payWithWalletBtn" class="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-gray-950 font-extrabold text-sm flex items-center justify-center space-x-2 transition shadow-lg shadow-amber-400/10 active:scale-[0.99]">
-          <i data-lucide="send" class="w-4 h-4 stroke-[2.5]"></i>
-          <span id="payBtnLabel">Pay Share with Nimiq Wallet</span>
+      <div class="grid grid-cols-2 gap-3 mt-5">
+        <button id="showQrBtn" class="py-3 px-4 rounded-xl border border-gray-700 bg-gray-800 hover:bg-gray-700 text-white font-semibold text-xs flex items-center justify-center gap-2 transition active:scale-95">
+          <i data-lucide="qr-code" class="w-4 h-4 text-amber-400"></i>
+          Show QR Code
         </button>
-        
-        <div class="grid grid-cols-2 gap-2">
-          <button id="showQrBtn" class="py-3 rounded-2xl bg-gray-800 hover:bg-gray-700 text-white font-semibold text-xs flex items-center justify-center space-x-1.5 transition border border-gray-700">
-            <i data-lucide="qr-code" class="w-4 h-4"></i>
-            <span>Show QR Code</span>
-          </button>
-          <button id="shareLinkBtn" class="py-3 rounded-2xl bg-gray-800 hover:bg-gray-700 text-white font-semibold text-xs flex items-center justify-center space-x-1.5 transition border border-gray-700">
-            <i data-lucide="share-2" class="w-4 h-4"></i>
-            <span id="shareBtnLabel">Share Link</span>
-          </button>
-        </div>
-      </div>
-    </main>
-
-    <!-- History Card -->
-    <section class="bg-gray-900/40 border border-gray-800/80 rounded-3xl p-5 space-y-3">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center space-x-2">
-          <i data-lucide="history" class="w-4 h-4 text-gray-400"></i>
-          <h2 class="text-xs font-bold uppercase tracking-wider text-gray-400">Recent Splits</h2>
-        </div>
-        <button id="clearHistoryBtn" class="text-[11px] text-gray-500 hover:text-gray-300 transition">Clear</button>
-      </div>
-      <div id="historyList" class="space-y-2 max-h-48 overflow-y-auto text-xs">
-        <div class="text-center text-gray-500 py-3 text-xs italic">No splits yet. Calculate a bill to get started!</div>
-      </div>
-    </section>
-
-  </div>
-
-  <!-- QR Modal -->
-  <div id="qrModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-gray-900 border border-gray-800 rounded-3xl p-6 max-w-xs w-full text-center space-y-4">
-      <div class="flex justify-between items-center">
-        <h3 class="font-bold text-sm text-white">Scan to Pay Share</h3>
-        <button id="closeQrBtn" class="text-gray-400 hover:text-white p-1">
-          <i data-lucide="x" class="w-5 h-5"></i>
+        <button id="payWithHubBtn" class="py-3 px-4 rounded-xl nimiq-gradient-bg hover:opacity-95 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 transition active:scale-95">
+          <i data-lucide="send" class="w-4 h-4"></i>
+          Pay with Hub
         </button>
       </div>
-      <div class="bg-white p-4 rounded-2xl inline-block shadow-inner">
-        <div id="qrContainer" class="flex items-center justify-center"></div>
+    </div>
+
+    <!-- RECENT TRANSACTIONS / HISTORY -->
+    <div class="bg-[#161b22] border border-gray-800 rounded-3xl p-5 shadow-xl">
+      <div class="flex items-center justify-between mb-4">
+        <span class="text-xs uppercase tracking-widest text-gray-400 font-bold">Recent Splits</span>
+        <button id="clearHistoryBtn" class="text-xs text-gray-500 hover:text-red-400">Clear</button>
       </div>
-      <div>
-        <p id="qrAmountDisplay" class="text-base font-bold font-mono text-amber-400">0 NIM</p>
-        <p id="qrAddrDisplay" class="text-[10px] font-mono text-gray-400 break-all mt-1 px-2"></p>
+      <div id="historyList" class="space-y-2 text-xs">
+        <div class="text-center py-6 text-gray-600">No recent splits yet.</div>
       </div>
-      <button id="qrDoneBtn" class="w-full py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-xs font-bold text-white transition">
-        Done
+    </div>
+  </main>
+
+  <!-- QR CODE MODAL -->
+  <div id="qrModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-[#161b22] border border-gray-800 rounded-3xl p-6 max-w-sm w-full flex flex-col items-center shadow-2xl">
+      <div class="w-full flex justify-between items-center mb-4">
+        <h3 class="font-bold text-white text-sm">Scan to Pay Share</h3>
+        <button id="closeQrModalBtn" class="text-gray-400 hover:text-white">✕</button>
+      </div>
+      
+      <div class="bg-white p-4 rounded-2xl shadow-inner mb-4">
+        <div id="qrcode"></div>
+      </div>
+
+      <div class="text-center w-full mb-4">
+        <div id="modalQrAmount" class="font-mono text-xl font-bold text-amber-400">0 NIM</div>
+        <p id="modalQrAddr" class="text-[11px] font-mono text-gray-400 truncate mt-1 px-4"></p>
+      </div>
+
+      <button id="copyPayUriBtn" class="w-full py-2.5 bg-gray-800 hover:bg-gray-700 text-white rounded-xl text-xs font-semibold mb-2 transition">
+        Copy Payment Link
       </button>
     </div>
   </div>
 
-  <!-- About Modal -->
-  <div id="aboutModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-gray-900 border border-gray-800 rounded-3xl p-6 max-w-sm w-full space-y-4">
-      <div class="flex justify-between items-center border-b border-gray-800 pb-3">
-        <div class="flex items-center space-x-2">
-          <div class="w-7 h-7 rounded-lg bg-amber-400 flex items-center justify-center text-gray-950 font-black text-xs">⚡</div>
-          <h3 class="font-bold text-base text-white">About NimiqSplit</h3>
-        </div>
-        <button id="closeAboutBtn" class="text-gray-400 hover:text-white p-1">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
-      
-      <div class="space-y-3 text-xs text-gray-300 leading-relaxed">
-        <p>
-          <strong class="text-amber-400">NimiqSplit</strong> simplifies splitting dining bills, group outings, and shared expenses using the Nimiq blockchain.
-        </p>
-        <div class="bg-gray-950/60 p-3 rounded-xl border border-gray-800 space-y-1.5">
-          <p class="font-bold text-white text-[11px] uppercase tracking-wide">How it works:</p>
-          <p>1. Enter your bill total and choose your currency (NIM, USD, EUR, CFA).</p>
-          <p>2. Select the group size and optional tip percentage.</p>
-          <p>3. Enter the receiver's Nimiq address (or connect your wallet).</p>
-          <p>4. Pay directly with the Nimiq Hub or show the QR code to your friends!</p>
-        </div>
-        <p class="text-[11px] text-gray-400">
-          Fast, browser-native transactions powered by Nimiq.
-        </p>
-      </div>
-
-      <button id="aboutGotItBtn" class="w-full py-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-gray-950 text-xs font-bold transition">
+  <!-- ABOUT MODAL -->
+  <div id="aboutModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-[#161b22] border border-gray-800 rounded-3xl p-6 max-w-sm w-full shadow-2xl">
+      <h3 class="font-bold text-white text-base mb-2">About NimiqSplit</h3>
+      <p class="text-xs text-gray-300 leading-relaxed mb-4">
+        NimiqSplit makes sharing dinner, groceries, and travel bills seamless using the peer-to-peer <strong>Nimiq cryptocurrency</strong>.
+      </p>
+      <ul class="text-xs text-gray-400 space-y-2 mb-6">
+        <li>⚡ Instant calculation in NIM and USD</li>
+        <li>🔐 Secure payments through the official Nimiq Hub</li>
+        <li>📱 QR code generation for offline and mobile scanning</li>
+      </ul>
+      <button id="closeAboutModalBtn" class="w-full py-2.5 nimiq-gradient-bg text-slate-900 font-bold rounded-xl text-xs">
         Got it!
       </button>
     </div>
   </div>
 
-  <!-- Scripts -->
   <script>
-    // State
+    // --- STATE ---
     let selectedCurrency = 'NIM';
-    let people = 2;
-    let tipPercent = 0;
-    let connectedAddress = localStorage.getItem('nimiqsplit_wallet') || null;
-    let history = JSON.parse(localStorage.getItem('nimiqsplit_history') || '[]');
-    let rates = { USD: 0.0014, EUR: 0.0013
+    let nimRateUsd = 0.0015;
+    let connectedAddress = localStorage.getItem('nimiq_wallet_address') || null;
+    let history = JSON.parse(localStorage.getItem('nimiq_history') || '[]');
 
-Sorry, the response was interrupted due to a connection issue. Please try again.
+    // --- NIMIQ HUB INITIALIZATION ---
+    let hubApi = null;
+    try {
+      if (window.HubApi) {
+        // Mode direct Hub Nimiq officiel
+        hubApi = new HubApi('https://hub.nimiq.com');
+      }
+    } catch (e) {
+      console.warn("HubApi initialization:", e);
+    }
+
+    // --- ELEMENTS ---
+    const currNimBtn = document.getElementById('currNim');
+    const currUsdBtn = document.getElementById('currUsd');
+    const totalInput = document.getElementById('totalAmountInput');
+    const peopleInput = document.getElementById('peopleCountInput');
+    const recipientInput = document.getElementById('recipientAddressInput');
+    const perPersonDisplay = document.getElementById('perPersonAmountDisplay');
+    const perPersonConverted = document.getElementById('perPersonConvertedDisplay');
+    const convertedTotalHelp = document.getElementById('convertedTotalHelp');
+    const unitLabel = document.getElementById('activeCurrencyUnit');
+    const resultCurrencyDisplay = document.getElementById('resultCurrencyDisplay');
+
+    const connectWalletBtn = document.getElementById('connectWalletBtn');
+    const walletBtnText = document.getElementById('walletBtnText');
+    const walletBanner = document.getElementById('walletBanner');
+    const connectedAddrDisplay = document.getElementById('connectedAddrDisplay');
+    const disconnectBtn = document.getElementById('disconnectWalletBtn');
+    const useMyAddressBtn = document.getElementById('useMyAddressBtn');
+
+    const payWithHubBtn = document.getElementById('payWithHubBtn');
+    const showQrBtn = document.getElementById('showQrBtn');
+    const qrModal = document.getElementById('qrModal');
+    const closeQrModalBtn = document.getElementById('closeQrModalBtn');
+    const modalQrAmount = document.getElementById('modalQrAmount');
+    const modalQrAddr = document.getElementById('modalQrAddr');
+    const copyPayUriBtn = document.getElementById('copyPayUriBtn');
+    const aboutBtn = document.getElementById('aboutBtn');
+    const aboutModal = document.getElementById('aboutModal');
+    const closeAboutModalBtn = document.getElementById('closeAboutModalBtn');
+    const historyList = document.getElementById('historyList');
+    const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+
+    // --- COINGECKO LIVE RATE ---
+    async function fetchRate() {
+      try {
+        const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=nimiq-2&vs_currencies=usd');
+        const data = await res.json();
+        if (data && data['nimiq-2'] && data['nimiq-2'].usd) {
+          nimRateUsd = data['nimiq-2'].usd;
+          recalculate();
+        }
+      } catch (err) {
+        console.warn("Rate fetch fallback to default:", nimRateUsd);
+      }
+    }
+
+    // --- CALCULATION ---
+    function recalculate() {
+      const total = parseFloat(totalInput.value) || 0;
+      const people = Math.max(1, parseInt(peopleInput.value) || 1);
+      const share = total / people;
+
+      if (selectedCurrency === 'NIM') {
+        unitLabel.innerText = 'NIM';
+        resultCurrencyDisplay.innerText = 'NIM';
+        perPersonDisplay.innerText = share > 0 ? share.toFixed(2) : '0.00';
+        perPersonConverted.innerText = `≈ $${(share * nimRateUsd).toFixed(4)} USD`;
+        convertedTotalHelp.innerText = `≈ $${(total * nimRateUsd).toFixed(4)} USD`;
+      } else {
+        unitLabel.innerText = 'USD';
+        resultCurrencyDisplay.innerText = 'USD';
+        perPersonDisplay.innerText = share > 0 ? share.toFixed(2) : '0.00';
+        const inNim = nimRateUsd > 0 ? share / nimRateUsd : 0;
+        perPersonConverted.innerText = `≈ ${inNim.toFixed(2)} NIM`;
+        convertedTotalHelp.innerText = `≈ ${(total / nimRateUsd).toFixed(2)} NIM`;
+      }
+    }
+
+    // --- CURRENCY SWITCH ---
+    currNimBtn.addEventListener('click', () => {
+      selectedCurrency = 'NIM';
+      currNimBtn.className = 'px-2.5 py-1 rounded-lg bg-amber-400 text-slate-900 font-bold transition';
+      currUsdBtn.className = 'px-2.5 py-1 rounded-lg text-gray-400 font-bold hover:text-white transition';
+      recalculate();
+    });
+
+    currUsdBtn.addEventListener('click', () => {
+      selectedCurrency = 'USD';
+      currUsdBtn.className = 'px-2.5 py-1 rounded-lg bg-amber-400 text-slate-900 font-bold transition';
+      currNimBtn.className = 'px-2.5 py-1 rounded-lg text-gray-400 font-bold hover:text-white transition';
+      recalculate();
+    });
+
+    totalInput.addEventListener('input', recalculate);
+    peopleInput.addEventListener('input', recalculate);
+    document.getElementById('increasePeopleBtn').addEventListener('click', () => {
+      peopleInput.value = (parseInt(peopleInput.value) || 1) + 1;
+      recalculate();
+    });
+    document.getElementById('decreasePeopleBtn').addEventListener('click', () => {
+      peopleInput.value = Math.max(1, (parseInt(peopleInput.value) || 1) - 1);
+      recalculate();
+    });
+
+    // --- WALLET DISPLAY ---
+    function updateWalletUI() {
+      if (connectedAddress) {
+        walletBtnText.innerText = connectedAddress.substring(0, 4) + '...' + connectedAddress.slice(-4);
+        connectedAddrDisplay.innerText = connectedAddress;
+        walletBanner.classList.remove('hidden');
+        if (!recipientInput.value) recipientInput.value = connectedAddress;
+      } else {
+        walletBtnText.innerText = 'Connect';
+        walletBanner.classList.add('hidden');
+      }
+    }
+
+    // --- NIMIQ CONNECT / CHOOSE ADDRESS ---
+    connectWalletBtn.addEventListener('click', async () => {
+      if (connectedAddress) return;
+
+      if (hubApi) {
+        try {
+          // Appel Hub officiel pour sélectionner / connecter une adresse
+          const res = await hubApi.chooseAddress({
+            appName: 'NimiqSplit'
+          });
+          if (res && res.address) {
+            connectedAddress = res.address;
+            localStorage.setItem('nimiq_wallet_address', connectedAddress);
+            updateWalletUI();
+            return;
+          }
+        } catch (err) {
+          console.log("Hub chooseAddress canceled or redirected:", err);
+        }
+      }
+
+      // Repli manuel transparent si l'utilisateur bloque les fenêtres
+      const manual = prompt("Enter your Nimiq Address (e.g. NQ...):");
+      if (manual && manual.trim().startsWith('NQ')) {
+        connectedAddress = manual.trim();
+        localStorage.setItem('nimiq_wallet_address', connectedAddress);
+        updateWalletUI();
+      }
+    });
+
+    disconnectBtn.addEventListener('click', () => {
+      connectedAddress = null;
+      localStorage.removeItem('nimiq_wallet_address');
+      updateWalletUI();
+    });
+
+    useMyAddressBtn.addEventListener('click', () => {
+      if (connectedAddress) {
+        recipientInput.value = connectedAddress;
+      } else {
+        alert("Please connect your wallet first!");
+      }
+    });
+
+    // --- PAY WITH HUB ---
+    payWithHubBtn.addEventListener('click', async () => {
+      const recipient = recipientInput.value.trim();
+      const perPerson = parseFloat(perPersonDisplay.innerText) || 0;
+
+      if (!recipient) {
+        alert("Please enter a recipient Nimiq address.");
+        return;
+      }
+      if (perPerson <= 0) {
+        alert("Please specify a valid amount.");
+        return;
+      }
+
+      // Calcul des Lunas (1 NIM = 100 000 Lunas)
+      const nimAmount = selectedCurrency === 'NIM' ? perPerson : (perPerson / nimRateUsd);
+      const lunas = Math.round(nimAmount * 100000);
+
+      if (hubApi) {
+        try {
+          await hubApi.checkout({
+            appName: 'NimiqSplit',
+            recipient: recipient,
+            value: lunas
+          });
+          saveHistory(nimAmount, 'Paid with Hub');
+        } catch (e) {
+          console.log("Checkout closed or redirected:", e);
+        }
+      } else {
+        // Redirection directe vers le format standard Nimiq Safe
+        const uri = `nimiq:${recipient}?amount=${lunas}`;
+        window.location.href = uri;
+      }
+    });
+
+    // --- QR CODE GENERATION ---
+    showQrBtn.addEventListener('click', () => {
+      const recipient = recipientInput.value.trim();
+      const perPerson = parseFloat(perPersonDisplay.innerText) || 0;
+
+      if (!recipient) {
+        alert("Please provide an address to generate payment QR code.");
+        return;
+      }
+
+      const nimAmount = selectedCurrency === 'NIM' ? perPerson : (perPerson / nimRateUsd);
+      const lunas = Math.round(nimAmount * 100000);
+      const uri = `nimiq:${recipient}?amount=${lunas}`;
+
+      const container = document.getElementById('qrcode');
+      container.innerHTML = '';
+      new QRCode(container, {
+        text: uri,
+        width: 180,
+        height: 180,
+        colorDark: "#000000",
+        colorLight: "#ffffff"
+      });
+
+      modalQrAmount.innerText = `${perPerson.toFixed(2)} ${selectedCurrency}`;
+      modalQrAddr.innerText = recipient;
+      qrModal.classList.remove('hidden');
+
+      copyPayUriBtn.onclick = () => {
+        navigator.clipboard.writeText(uri);
+        copyPayUriBtn.innerText = "Copied!";
+        setTimeout(() => copyPayUriBtn.innerText = "Copy Payment Link", 2000);
+      };
+    });
+
+    closeQrModalBtn.addEventListener('click', () => qrModal.classList.add('hidden'));
+
+    // --- HISTORY ---
+    function saveHistory(amount, note) {
+      history.unshift({
+        amount: amount.toFixed(2),
+        date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        note: note
+      });
+      if (history.length > 5) history.pop();
+      localStorage.setItem('nimiq_history', JSON.stringify(history));
+      renderHistory();
+    }
+
+    function renderHistory() {
+      if (history.length === 0) {
+        historyList.innerHTML = `<div class="text-center py-4 text-gray-600">No recent splits yet.</div>`;
+        return;
+      }
+      historyList.innerHTML = history.map(item => `
+        <div class="flex justify-between items-center bg-[#0d1117] p-2.5 rounded-xl border border-gray-800">
+          <div>
+            <div class="font-bold text-white">${item.amount} NIM</div>
+            <div class="text-[10px] text-gray-500">${item.note}</div>
+          </div>
+          <span class="text-gray-400 font-mono text-[10px]">${item.date}</span>
+        </div>
+      `).join('');
+    }
+
+    clearHistoryBtn.addEventListener('click', () => {
+      history = [];
+      localStorage.removeItem('nimiq_history');
+      renderHistory();
+    });
+
+    // --- ABOUT MODAL ---
+    aboutBtn.addEventListener('click', () => aboutModal.classList.remove('hidden'));
+    closeAboutModalBtn.addEventListener('click', () => aboutModal.classList.add('hidden'));
+
+    // Init
+    lucide.createIcons();
+    updateWalletUI();
+    renderHistory();
+    fetchRate();
+  </script>
+</body>
+</html>
